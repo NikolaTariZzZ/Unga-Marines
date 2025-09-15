@@ -65,11 +65,11 @@
 			RES_TIER_UNCOMMON = list(
 				/obj/item/research_product/money/uncommon,
 				/obj/item/implanter/chem/blood,
+				/obj/item/implanter/cloak,
 				/obj/item/attachable/shoulder_mount,
 			),
 			RES_TIER_RARE = list(
 				/obj/item/research_product/money/rare,
-				/obj/item/implanter/cloak,
 			),
 		),
 	)
@@ -90,6 +90,8 @@
 
 /obj/machinery/researchcomp/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 	if(researching || !istype(I, /obj/item/research_resource))
 		return
 

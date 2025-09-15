@@ -32,7 +32,7 @@
 	owner.balloon_alert(owner, "We are vulnerable again")
 	return ..()
 
-/datum/status_effect/resin_jelly_coating/tick()
+/datum/status_effect/resin_jelly_coating/tick(delta_time)
 	owner.heal_limb_damage(0, 5)
 	return ..()
 
@@ -99,7 +99,7 @@
 	REMOVE_TRAIT(link_target, TRAIT_ESSENCE_LINKED, TRAIT_STATUS_EFFECT(id))
 	return ..()
 
-/datum/status_effect/stacking/essence_link/tick()
+/datum/status_effect/stacking/essence_link/tick(delta_time)
 	var/within_range = get_dist(link_owner, link_target) <= DRONE_ESSENCE_LINK_RANGE
 	if(within_range != was_within_range) // Toggles the link depending on whether the linked xenos are still in range or not.
 		was_within_range = within_range
@@ -110,7 +110,7 @@
 	if(stacks < max_stacks && COOLDOWN_CHECK(src, attunement_increase))
 		add_stacks(1)
 
-	var/remaining_health = link_target.maxHealth - (link_target.getBruteLoss() + link_target.getFireLoss())
+	var/remaining_health = link_target.maxHealth - (link_target.get_brute_loss() + link_target.get_fire_loss())
 	if(stacks < 1 || !was_within_range || remaining_health >= link_target.maxHealth)
 		return
 	var/heal_amount = link_target.maxHealth * (DRONE_ESSENCE_LINK_REGEN * stacks)
@@ -122,8 +122,8 @@
 		link_target.balloon_alert(link_target, "No plasma for link")
 		COOLDOWN_START(src, plasma_warning, plasma_warning_cooldown)
 		return
-	link_target.adjustFireLoss(-max(0, heal_amount - link_target.getBruteLoss()), passive = TRUE)
-	link_target.adjustBruteLoss(-heal_amount, passive = TRUE)
+	link_target.adjust_fire_loss(-max(0, heal_amount - link_target.get_brute_loss()), passive = TRUE)
+	link_target.adjust_brute_loss(-heal_amount, passive = TRUE)
 	link_owner.use_plasma(ability_cost)
 
 /// Shares the Resin Jelly buff with the linked xeno.
@@ -165,8 +165,8 @@
 
 	new /obj/effect/temp_visual/healing(get_turf(heal_target))
 	var/heal_amount = clamp(abs(amount) * (DRONE_ESSENCE_LINK_SHARED_HEAL * stacks), 0, heal_target.maxHealth)
-	heal_target.adjustFireLoss(-max(0, heal_amount - heal_target.getBruteLoss()), passive = TRUE)
-	heal_target.adjustBruteLoss(-heal_amount, passive = TRUE)
+	heal_target.adjust_fire_loss(-max(0, heal_amount - heal_target.get_brute_loss()), passive = TRUE)
+	heal_target.adjust_brute_loss(-heal_amount, passive = TRUE)
 	heal_target.adjust_sunder(-heal_amount * 0.1)
 	heal_target.balloon_alert(heal_target, "Shared heal: +[heal_amount]")
 
@@ -223,11 +223,11 @@
 	buff_owner.balloon_alert(buff_owner, "Salve regeneration ended")
 	return ..()
 
-/datum/status_effect/salve_regen/tick()
+/datum/status_effect/salve_regen/tick(delta_time)
 	new /obj/effect/temp_visual/healing(get_turf(buff_owner))
 	var/heal_amount = buff_owner.maxHealth * 0.01
-	buff_owner.adjustFireLoss(-max(0, heal_amount - buff_owner.getBruteLoss()), passive = TRUE)
-	buff_owner.adjustBruteLoss(-heal_amount, passive = TRUE)
+	buff_owner.adjust_fire_loss(-max(0, heal_amount - buff_owner.get_brute_loss()), passive = TRUE)
+	buff_owner.adjust_brute_loss(-heal_amount, passive = TRUE)
 	buff_owner.adjust_sunder(-1)
 	return ..()
 
@@ -293,7 +293,7 @@
 	toggle_buff(FALSE)
 	return ..()
 
-/datum/status_effect/drone_enhancement/tick()
+/datum/status_effect/drone_enhancement/tick(delta_time)
 	var/within_range = get_dist(buffed_xeno, buffing_xeno) <= DRONE_ESSENCE_LINK_RANGE
 	if(within_range != was_within_range)
 		was_within_range = within_range
@@ -362,7 +362,7 @@
 	owner.remove_movespeed_modifier(MOVESPEED_ID_GORGER_REJUVENATE)
 	owner.remove_filter("[id]m")
 
-/datum/status_effect/xeno_rejuvenate/tick()
+/datum/status_effect/xeno_rejuvenate/tick(delta_time)
 	var/mob/living/carbon/xenomorph/owner_xeno = owner
 	if(owner_xeno.plasma_stored < GORGER_REJUVENATE_COST)
 		to_chat(owner_xeno, span_notice("Not enough substance to sustain ourselves..."))
@@ -374,7 +374,7 @@
 	to_chat(owner_xeno, span_notice("We feel our wounds close up."))
 
 	var/amount = owner_xeno.maxHealth * GORGER_REJUVENATE_HEAL
-	HEAL_XENO_DAMAGE(owner_xeno, amount, FALSE)
+	owner_xeno.heal_xeno_damage(amount, FALSE)
 	tick_damage = 0
 
 ///Handles damage received when the status effect is active
@@ -492,7 +492,7 @@
 	SIGNAL_HANDLER
 	CALC_DAMAGE_REDUCTION(amount, amount_mod)
 	var/mob/living/carbon/xenomorph/owner_xeno = owner
-	owner_xeno.adjustFireLoss(amount)
+	owner_xeno.adjust_fire_loss(amount)
 	if(owner.health <= minimum_health)
 		owner.remove_status_effect(STATUS_EFFECT_XENO_PSYCHIC_LINK)
 
@@ -501,7 +501,7 @@
 	SIGNAL_HANDLER
 	CALC_DAMAGE_REDUCTION(amount, amount_mod)
 	var/mob/living/carbon/xenomorph/owner_xeno = owner
-	owner_xeno.adjustBruteLoss(amount)
+	owner_xeno.adjust_brute_loss(amount)
 	if(owner.health <= minimum_health)
 		owner.remove_status_effect(STATUS_EFFECT_XENO_PSYCHIC_LINK)
 
@@ -574,8 +574,8 @@
 /datum/status_effect/xeno_carnage/proc/do_carnage_slash(datum/source, mob/living/target, damage)
 	var/mob/living/carbon/xenomorph/owner_xeno = owner
 	var/owner_heal = healing_on_hit
-	HEAL_XENO_DAMAGE(owner_xeno, owner_heal, FALSE)
-	adjustOverheal(owner_xeno, owner_heal * 0.5)
+	owner_xeno.heal_xeno_damage(owner_heal, FALSE)
+	owner_xeno.adjust_overheal(owner_heal * 0.5)
 
 	if(plasma_mod >= HIGN_THRESHOLD)
 		owner_xeno.AdjustImmobilized(KNOCKDOWN_DURATION)
@@ -584,14 +584,15 @@
 
 		if(do_after(owner_xeno, KNOCKDOWN_DURATION, IGNORE_HELD_ITEM, target))
 			owner_xeno.gain_plasma(plasma_gain_on_hit)
-			target.blood_volume = max(target.blood_volume - 30, 0) //RUTGMC EDIT
+			target.adjust_blood_volume(-30)
+			SEND_SIGNAL(target, COMSIG_XENO_CARNAGE_HIT, owner_xeno.xeno_caste.drain_plasma_gain, owner_xeno)
 
 	if(owner_xeno.has_status_effect(STATUS_EFFECT_XENO_FEAST))
 		for(var/mob/living/carbon/xenomorph/target_xeno AS in cheap_get_xenos_near(owner_xeno, 4))
 			if(target_xeno == owner_xeno)
 				continue
 			var/heal_amount = healing_on_hit
-			HEAL_XENO_DAMAGE(target_xeno, heal_amount, FALSE)
+			target_xeno.heal_xeno_damage(heal_amount, FALSE)
 			new /obj/effect/temp_visual/telekinesis(get_turf(target_xeno))
 			to_chat(target_xeno, span_notice("You feel your wounds being restored by [owner_xeno]'s pheromones."))
 
@@ -630,7 +631,7 @@
 	owner.clear_fullscreen("xeno_feast", 0.7 SECONDS)
 	owner.remove_filter(list("[id]1", "[id]2"))
 
-/datum/status_effect/xeno_feast/tick()
+/datum/status_effect/xeno_feast/tick(delta_time)
 	. = ..()
 	var/mob/living/carbon/xenomorph/xeno_owner = owner
 
@@ -639,8 +640,8 @@
 		xeno_owner.remove_status_effect(STATUS_EFFECT_XENO_FEAST)
 
 	var/heal_amount = xeno_owner.maxHealth * 0.08
-	HEAL_XENO_DAMAGE(xeno_owner, heal_amount, FALSE)
-	adjustOverheal(xeno_owner, heal_amount * 0.5)
+	xeno_owner.heal_xeno_damage(heal_amount, FALSE)
+	xeno_owner.adjust_overheal(heal_amount * 0.5)
 	xeno_owner.use_plasma(plasma_drain)
 
 	for(var/mob/living/carbon/xenomorph/target_xeno AS in cheap_get_xenos_near(xeno_owner, 4))
@@ -648,10 +649,9 @@
 			continue
 		if(target_xeno.faction != xeno_owner.faction)
 			continue
-		HEAL_XENO_DAMAGE(target_xeno, heal_amount, FALSE)
-		adjustOverheal(target_xeno, heal_amount * 0.5)
+		target_xeno.heal_xeno_damage(heal_amount, FALSE)
+		target_xeno.adjust_overheal(heal_amount * 0.5)
 		new /obj/effect/temp_visual/healing(get_turf(target_xeno))
-
 
 // ***************************************
 // *********** FRENZY SCREECH
@@ -659,26 +659,27 @@
 /datum/status_effect/frenzy_screech
 	id = "frenzy_screech"
 	status_type = STATUS_EFFECT_REFRESH
-	var/mob/living/carbon/xenomorph/buff_owner
-	var/modifier
+	var/damage_modifier
 
-/datum/status_effect/frenzy_screech/on_creation(mob/living/new_owner, set_duration, damage_modifier)
-	duration = set_duration
-	owner = new_owner
-	modifier = damage_modifier
+/datum/status_effect/frenzy_screech/on_creation(mob/living/new_owner, duration, damage_modifier)
+	if(!isxeno(new_owner))
+		CRASH("Plasma surge was applied on a nonxeno, dont do that")
+	src.duration = duration
+	src.damage_modifier = damage_modifier
 	return ..()
 
 /datum/status_effect/frenzy_screech/on_apply()
 	if(!isxeno(owner))
 		return FALSE
-	buff_owner = owner
-	buff_owner.xeno_melee_damage_modifier += modifier
-	owner.add_filter("frenzy_screech_outline", 3, outline_filter(1, COLOR_VIVID_RED))
+	var/mob/living/carbon/xenomorph/xeno_owner = owner
+	xeno_owner.xeno_melee_damage_modifier += damage_modifier
+	xeno_owner.add_filter("frenzy_screech_outline", 3, outline_filter(1, COLOR_VIVID_RED))
 	return TRUE
 
 /datum/status_effect/frenzy_screech/on_remove()
-	buff_owner.xeno_melee_damage_modifier -= modifier
-	owner.remove_filter("frenzy_screech_outline")
+	var/mob/living/carbon/xenomorph/xeno_owner = owner
+	xeno_owner.xeno_melee_damage_modifier -= damage_modifier
+	xeno_owner.remove_filter("frenzy_screech_outline")
 	return ..()
 
 // ***************************************
@@ -710,13 +711,13 @@
 	else
 		RegisterSignal(owner, COMSIG_XENOMORPH_PLASMA_REGEN, PROC_REF(plasma_surge_regeneration))
 
-/datum/status_effect/plasma_surge/proc/plasma_surge_regeneration()
+/datum/status_effect/plasma_surge/proc/plasma_surge_regeneration(mob/living/carbon/xenomorph/xeno, plasma_mod, seconds_per_tick)
 	SIGNAL_HANDLER
 
 	var/mob/living/carbon/xenomorph/X = owner
 	if(HAS_TRAIT(X,TRAIT_NOPLASMAREGEN)) //No bonus plasma if you're on a diet
 		return
-	var/bonus_plasma = X.xeno_caste.plasma_gain * bonus_regen * (1 + X.recovery_aura * 0.05) //Recovery aura multiplier; 5% bonus per full level
+	var/bonus_plasma = X.xeno_caste.plasma_gain * bonus_regen * (1 + X.recovery_aura * 0.05) * seconds_per_tick * XENO_PER_SECOND_LIFE_MOD //Recovery aura multiplier; 5% bonus per full level
 	X.gain_plasma(bonus_plasma)
 
 /datum/status_effect/plasma_surge/on_remove()
@@ -775,7 +776,7 @@
 	return ..()
 
 ///Called when the target xeno regains HP via heal_wounds in life.dm
-/datum/status_effect/healing_infusion/proc/healing_infusion_regeneration(mob/living/carbon/xenomorph/patient)
+/datum/status_effect/healing_infusion/proc/healing_infusion_regeneration(mob/living/carbon/xenomorph/patient, heal_data, seconds_per_tick)
 	SIGNAL_HANDLER
 
 	if(!health_ticks_remaining)
@@ -786,14 +787,14 @@
 
 	new /obj/effect/temp_visual/healing(get_turf(patient)) //Cool SFX
 
-	var/total_heal_amount = 6 + (patient.maxHealth * 0.03) //Base amount 6 HP plus 3% of max
+	var/total_heal_amount = 6 + (patient.maxHealth * 0.03) * seconds_per_tick * XENO_PER_SECOND_LIFE_MOD //Base amount 6 HP plus 3% of max
 	if(patient.recovery_aura)
 		total_heal_amount *= (1 + patient.recovery_aura * 0.05) //Recovery aura multiplier; 5% bonus per full level
 
 	//Healing pool has been calculated; now to decrement it
 	var/brute_amount = min(patient.bruteloss, total_heal_amount)
 	if(brute_amount)
-		patient.adjustBruteLoss(-brute_amount, updating_health = TRUE)
+		patient.adjust_brute_loss(-brute_amount, updating_health = TRUE)
 		total_heal_amount = max(0, total_heal_amount - brute_amount) //Decrement from our heal pool the amount of brute healed
 
 	if(!total_heal_amount) //no healing left, no need to continue
@@ -801,11 +802,11 @@
 
 	var/burn_amount = min(patient.fireloss, total_heal_amount)
 	if(burn_amount)
-		patient.adjustFireLoss(-burn_amount, updating_health = TRUE)
+		patient.adjust_fire_loss(-burn_amount, updating_health = TRUE)
 
 
 ///Called when the target xeno regains Sunder via heal_wounds in life.dm
-/datum/status_effect/healing_infusion/proc/healing_infusion_sunder_regeneration(mob/living/carbon/xenomorph/patient)
+/datum/status_effect/healing_infusion/proc/healing_infusion_sunder_regeneration(mob/living/carbon/xenomorph/patient, seconds_per_tick)
 	SIGNAL_HANDLER
 
 	if(!sunder_ticks_remaining)
@@ -819,7 +820,7 @@
 
 	new /obj/effect/temp_visual/telekinesis(get_turf(patient)) //Visual confirmation
 
-	patient.adjust_sunder(-1.5 * (1 + patient.recovery_aura * 0.05)) //5% bonus per rank of our recovery aura
+	patient.adjust_sunder(-1.5 * (1 + patient.recovery_aura * 0.05) * seconds_per_tick * XENO_PER_SECOND_LIFE_MOD) //5% bonus per rank of our recovery aura
 
 /atom/movable/screen/alert/status_effect/healing_infusion
 	name = "Healing Infusion"
@@ -973,7 +974,7 @@
 	status_type = STATUS_EFFECT_UNIQUE
 	alert_type = /atom/movable/screen/alert/status_effect/upgrade_carapace
 	var/mob/living/carbon/xenomorph/buff_owner
-	var/armor_buff_per_chamber = 5
+	var/armor_buff_per_chamber = 2.5
 	var/chamber_scaling = 0
 
 /datum/status_effect/upgrade_carapace/on_apply()
@@ -1010,8 +1011,8 @@
 	status_type = STATUS_EFFECT_UNIQUE
 	alert_type = /atom/movable/screen/alert/status_effect/upgrade_regeneration
 	var/mob/living/carbon/xenomorph/buff_owner
-	var/regen_buff_per_chamber = 0.05
-	var/sunder_regen_per_chamber = 0.33
+	var/regen_buff_per_chamber = 0.008
+	var/sunder_regen_per_chamber = 0.166
 	var/chamber_scaling = 0
 
 /datum/status_effect/upgrade_regeneration/on_apply()
@@ -1021,13 +1022,13 @@
 	chamber_scaling = length(buff_owner.hive.shell_chambers)
 	return TRUE
 
-/datum/status_effect/upgrade_regeneration/tick()
+/datum/status_effect/upgrade_regeneration/tick(delta_time)
 	chamber_scaling = length(buff_owner.hive.shell_chambers)
 	if(chamber_scaling > 0)
 		var/amount = buff_owner.maxHealth * regen_buff_per_chamber * chamber_scaling * (1 + buff_owner.recovery_aura * 0.05)
-		HEAL_XENO_DAMAGE(buff_owner, amount, FALSE)
+		buff_owner.heal_xeno_damage(amount, FALSE)
 		buff_owner.adjust_sunder(-sunder_regen_per_chamber * chamber_scaling)
-		buff_owner.updatehealth()
+		buff_owner.update_health()
 	return ..()
 
 // ***************************************
@@ -1044,7 +1045,7 @@
 	status_type = STATUS_EFFECT_UNIQUE
 	alert_type = /atom/movable/screen/alert/status_effect/upgrade_vampirism
 	var/mob/living/carbon/xenomorph/buff_owner
-	var/leech_buff_per_chamber = 0.033
+	var/leech_buff_per_chamber = 0.016
 	var/chamber_scaling = 0
 
 /datum/status_effect/upgrade_vampirism/on_apply()
@@ -1073,9 +1074,9 @@
 		return
 	var/bruteloss_healed = buff_owner.maxHealth * leech_buff_per_chamber * chamber_scaling
 	var/fireloss_healed = clamp(bruteloss_healed - buff_owner.bruteloss, 0, bruteloss_healed)
-	buff_owner.adjustBruteLoss(-bruteloss_healed)
-	buff_owner.adjustFireLoss(-fireloss_healed)
-	buff_owner.updatehealth()
+	buff_owner.adjust_brute_loss(-bruteloss_healed)
+	buff_owner.adjust_fire_loss(-fireloss_healed)
+	buff_owner.update_health()
 
 // ***************************************
 // *********** Upgrade Chambers Buffs - Attack
@@ -1139,7 +1140,7 @@
 	chamber_scaling = length(buff_owner.hive.spur_chambers)
 	return TRUE
 
-/datum/status_effect/upgrade_adrenaline/tick()
+/datum/status_effect/upgrade_adrenaline/tick(delta_time)
 	if(HAS_TRAIT(buff_owner, TRAIT_NOPLASMAREGEN))
 		return
 	chamber_scaling = length(buff_owner.hive.spur_chambers)
@@ -1196,12 +1197,12 @@
 
 /atom/movable/screen/alert/status_effect/upgrade_toxin/Click()
 	var/static/list/upgrade_toxin_images_list = list(
-			DEFILER_OZELOMELYN = image('icons/Xeno/actions.dmi', icon_state = DEFILER_OZELOMELYN),
-			DEFILER_HEMODILE = image('icons/Xeno/actions.dmi', icon_state = DEFILER_HEMODILE),
-			DEFILER_TRANSVITOX = image('icons/Xeno/actions.dmi', icon_state = DEFILER_TRANSVITOX),
-			DEFILER_NEUROTOXIN = image('icons/Xeno/actions.dmi', icon_state = DEFILER_NEUROTOXIN),
-			DEFILER_ACID = image('icons/Xeno/actions.dmi', icon_state = DEFILER_ACID),
-		)
+		REAGENT_OZELOMELYN = image('icons/Xeno/actions/general.dmi', icon_state = REAGENT_OZELOMELYN),
+		REAGENT_HEMODILE = image('icons/Xeno/actions/general.dmi', icon_state = REAGENT_HEMODILE),
+		REAGENT_TRANSVITOX = image('icons/Xeno/actions/general.dmi', icon_state = REAGENT_TRANSVITOX),
+		REAGENT_SANGUINAL = image('icons/Xeno/actions/general.dmi', icon_state = REAGENT_SANGUINAL),
+		REAGENT_ACID = image('icons/Xeno/actions/general.dmi', icon_state = REAGENT_ACID),
+	)
 	var/datum/status_effect/upgrade_toxin/effect = attached_effect
 	if(effect.buff_owner.incapacitated(TRUE))
 		to_chat(usr, span_warning("Cant do that right now!"))
@@ -1224,12 +1225,12 @@
 	var/mob/living/carbon/xenomorph/buff_owner
 	var/toxin_amount_per_chamber = 1
 	var/chamber_scaling = 0
-	var/datum/reagent/toxin/injected_reagent = /datum/reagent/toxin/xeno_neurotoxin
+	var/datum/reagent/toxin/injected_reagent = /datum/reagent/toxin/xeno_transvitox
 	var/list/selectable_reagents = list(
 		/datum/reagent/toxin/xeno_ozelomelyn,
 		/datum/reagent/toxin/xeno_hemodile,
 		/datum/reagent/toxin/xeno_transvitox,
-		/datum/reagent/toxin/xeno_neurotoxin,
+		/datum/reagent/toxin/xeno_sanguinal,
 		/datum/reagent/toxin/acid,
 	)
 
@@ -1290,7 +1291,7 @@
 	alert_type = /atom/movable/screen/alert/status_effect/upgrade_pheromones
 	var/mob/living/carbon/xenomorph/buff_owner
 	var/datum/aura_bearer/current_aura
-	var/phero_power_per_chamber = 1
+	var/phero_power_per_chamber = 0.5
 	var/phero_power_base = 1
 	var/chamber_scaling = 0
 	var/emitted_aura = AURA_XENO_RECOVERY
@@ -1348,7 +1349,7 @@
 	var/chamber_scaling = 0
 	var/list/selectable_trails = list(
 		/obj/effect/xenomorph/spray,
-		/obj/alien/resin/sticky/thin,
+		/obj/alien/resin/sticky/thin/temporary,
 	)
 
 /datum/status_effect/upgrade_trail/on_apply()
@@ -1371,7 +1372,7 @@
 
 /datum/status_effect/upgrade_trail/proc/do_acid_trail()
 	SIGNAL_HANDLER
-	if(buff_owner.incapacitated(TRUE))
+	if(buff_owner.incapacitated(TRUE) || buff_owner.status_flags & INCORPOREAL || buff_owner.is_ventcrawling)
 		return
 	if(prob(base_chance + chance_per_chamber * chamber_scaling))
 		var/turf/T = get_turf(buff_owner)
@@ -1386,3 +1387,65 @@
 				O.acid_spray_act(buff_owner)
 		else
 			new selected_trail(T)
+
+// ***************************************
+// *********** Baton Pass
+// ***************************************
+/atom/movable/screen/alert/status_effect/baton_pass
+	name = "Baton Pass"
+	desc = "Adrenaline is pushing your muscles to the limit!"
+	icon_state = "xeno_carnage"
+
+/datum/status_effect/baton_pass
+	id = "xeno_batonpass"
+	alert_type = /atom/movable/screen/alert/status_effect/baton_pass
+	duration = 6 SECONDS
+	status_type = STATUS_EFFECT_REFRESH
+	/// Used for particles. Holds the particles instead of the mob. See particle_holder for documentation.
+	var/obj/effect/abstract/particle_holder/particle_holder
+
+/datum/status_effect/baton_pass/on_apply()
+	if(!isxeno(owner))
+		return FALSE
+	var/mob/living/carbon/xenomorph/owner_xeno = owner
+
+	particle_holder = new(owner_xeno, /particles/baton_pass)
+	var/particle_x = abs(owner_xeno.pixel_x)
+	particle_holder.pixel_x = particle_x
+	particle_holder.pixel_y = -3
+
+	//only slower xenos get better movespeed amplify. No gigaspeed runners
+	var/movespeed_mod = ((owner_xeno.xeno_caste.speed <= -1) ? -0.1 : (owner_xeno.xeno_caste.speed <= -0.8) ? -0.2 : -0.4)
+	owner_xeno.add_movespeed_modifier(MOVESPEED_ID_PRAETORIAN_DANCER_BATON_PASS, TRUE, 1, NONE, TRUE, movespeed_mod)
+
+	to_chat(owner, span_notice("We feel on top of the world! Go, go, go!"))
+	owner_xeno.Shake(duration = 6 SECONDS, shake_interval = 0.08 SECONDS)
+	owner_xeno.emote("roar")
+
+	return ..()
+
+/datum/status_effect/baton_pass/on_remove()
+	. = ..()
+	var/mob/living/carbon/xenomorph/owner_xeno = owner
+	owner_xeno.remove_movespeed_modifier(MOVESPEED_ID_PRAETORIAN_DANCER_BATON_PASS)
+	to_chat(owner, span_notice("We come down from our adrenaline high."))
+	QDEL_NULL(particle_holder)
+
+/particles/baton_pass
+	icon = 'icons/effects/particles/generic_particles.dmi'
+	icon_state = "up_arrow"
+	color = "#77bfe9"
+	width = 100
+	height = 100
+	count = 1000
+	spawning = 3
+	lifespan = 9
+	fade = 12
+	grow = 0.04
+	velocity = list(0, 0)
+	position = generator(GEN_CIRCLE, 16, 16, NORMAL_RAND)
+	drift = generator(GEN_VECTOR, list(0, -0.15), list(0, 0.15))
+	gravity = list(0, 0.8)
+	scale = generator(GEN_VECTOR, list(0.1, 0.1), list(0.6,0.6), NORMAL_RAND)
+	rotation = 0
+	spin = generator(GEN_NUM, 10, 20)

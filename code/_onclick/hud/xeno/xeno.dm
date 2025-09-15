@@ -10,6 +10,8 @@
 	name = "toggle night vision"
 	icon_state = "nightvision2"
 	screen_loc = ui_alien_nightvision
+	mouse_over_pointer = MOUSE_HAND_POINTER
+
 
 /atom/movable/screen/alien/nightvision/Click()
 	. = ..()
@@ -27,11 +29,12 @@
 		else
 			icon_state = "nightvision0"
 
-
 /atom/movable/screen/alien/queen_locator
 	icon_state = "trackoff"
 	name = "queen locator (click for hive status)"
 	screen_loc = ui_queen_locator
+	mouse_over_pointer = MOUSE_HAND_POINTER
+
 
 /atom/movable/screen/alien/queen_locator/Click()
 	. = ..()
@@ -63,7 +66,7 @@
 	screen_loc = ui_sunderhud
 
 /datum/hud/alien/New(mob/living/carbon/xenomorph/owner, ui_style, ui_color, ui_alpha = 230)
-	..()
+	. = ..()
 	var/atom/movable/screen/using
 	var/atom/movable/screen/inventory/inv_box
 
@@ -173,3 +176,10 @@
 			H.r_hand.screen_loc = null
 		if(H.l_hand)
 			H.l_hand.screen_loc = null
+
+/mob/living/carbon/xenomorph/create_mob_hud()
+	. = ..()
+	//Some parts require hud_used to already be set
+	med_hud_set_health()
+	hud_set_plasma()
+	hud_update_primo()

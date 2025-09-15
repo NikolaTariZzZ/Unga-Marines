@@ -5,15 +5,15 @@
 /obj/item/portable_vendor
 	name = "\improper Automated Storage Briefcase"
 	desc = "A suitcase-sized automated storage and retrieval system. Designed to efficiently store and selectively dispense small items."
-	icon = 'icons/obj/items/storage/storage.dmi'
+	icon = 'icons/obj/items/storage/briefcase.dmi'
 	icon_state = "secure"
-	item_icons = list(
+	worn_icon_list = list(
 		slot_l_hand_str = 'icons/mob/inhands/items/containers_left.dmi',
 		slot_r_hand_str = 'icons/mob/inhands/items/containers_right.dmi',
 	)
-	flags_atom = CONDUCT
+	atom_flags = CONDUCT
 	force = 8
-	hitsound = "swing_hit"
+	hitsound = SFX_SWING_HIT
 	throw_speed = 1
 	throw_range = 4
 	w_class = WEIGHT_CLASS_BULKY
@@ -129,7 +129,7 @@
 			if(use_points)
 				points -= cost
 
-			playsound(src, "sound/machines/fax.ogg", 5)
+			playsound(src, 'sound/machines/fax.ogg', 5)
 			balloon_alert(user, "fabricating")
 			fabricating = TRUE
 			update_appearance()
@@ -171,7 +171,7 @@
 /obj/item/portable_vendor/proc/malfunction()
 	var/turf/T = get_turf(src)
 	T.visible_message(span_warning("[src] shudders as its internal components break apart!"))
-	broken = 1
+	broken = TRUE
 	STOP_PROCESSING(SSobj, src)
 	update_appearance()
 
@@ -181,9 +181,10 @@
 	s.start()
 
 /obj/item/portable_vendor/emp_act(severity)
+	. = ..()
 	if(broken)
 		return
-	if(prob(40 * severity))
+	if(prob(100 - (severity * 20)))
 		malfunction()
 
 /obj/item/portable_vendor/ex_act(severity)
@@ -198,7 +199,7 @@
 	req_role = /datum/job/terragov/civilian/liaison
 	listed_products = list(
 		list("INCENTIVES", 0, null, null, null),
-		list("Cash", 2, /obj/item/spacecash/c500, "white", "$500 USD, unmarked bills"),
+		list("Cash", 2, /obj/item/spacecash/bundle/c500, "white", "$500 USD, unmarked bills"),
 		list("Cigars", 5, /obj/item/storage/fancy/cigar, "white", "Case of premium cigars, untampered."),
 		list("Space Drug Autoinjector", 10, /obj/item/reagent_containers/hypospray/autoinjector/spacedrugs, "white", "Drugs for junkie marines who still need that fix."),
 		list("Nanotrasen 'Space-Aged' 60-Year Old Whiskey", 20, /obj/item/reagent_containers/food/drinks/bottle/specialwhiskey, "white", "Aged at the bottom of a starship since 2378. You can guess how much it's worth."),

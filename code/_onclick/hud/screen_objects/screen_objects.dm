@@ -1,12 +1,23 @@
+/*
+	Screen objects
+	Todo: improve/re-implement
+
+	Screen objects are only used for the hud and should not appear anywhere "in-game".
+	They are used with the client/screen list and the screen_loc var.
+	For more information, see the byond documentation on the screen_loc and screen vars.
+*/
 /atom/movable/screen
 	name = ""
 	icon = 'icons/mob/screen/generic.dmi'
 	layer = HUD_LAYER
+	// NOTE: screen objects do NOT change their plane to match the z layer of their owner
+	// You shouldn't need this, but if you ever do and it's widespread, reconsider what you're doing.
 	plane = HUD_PLANE
 	resistance_flags = RESIST_ALL | PROJECTILE_IMMUNE
 	appearance_flags = APPEARANCE_UI
 	var/obj/master //A reference to the object in the slot. Grabs or items, generally.
-	var/datum/hud/hud // A reference to the owner HUD, if any./atom/movable/screen
+	/// A reference to the owner HUD, if any.
+	var/datum/hud/hud
 
 	//Map popups
 	/**
@@ -23,6 +34,15 @@
 	 */
 	var/del_on_map_removal = TRUE
 
+	/**
+	 * If TRUE, clicking the screen element will fall through and perform a default "Click" call
+	 * Obviously this requires your Click override, if any, to call parent on their own.
+	 * This is set to FALSE to default to dissade you from doing this.
+	 * Generally we don't want default Click stuff, which results in bugs like using Telekinesis on a screen element
+	 * or trying to point your gun at your screen.
+	*/
+	var/default_click = FALSE
+
 /atom/movable/screen/Initialize(mapload, datum/hud/hud_owner)
 	. = ..()
 	if(hud_owner && istype(hud_owner))
@@ -33,6 +53,11 @@
 	hud = null
 	return ..()
 
+/atom/movable/screen/Click(location, control, params)
+	if(atom_flags & INITIALIZED)
+		SEND_SIGNAL(src, COMSIG_SCREEN_ELEMENT_CLICK, location, control, params, usr)
+	if(default_click)
+		return ..()
 
 /atom/movable/screen/proc/component_click(atom/movable/screen/component_button/component, params)
 	return
@@ -44,6 +69,7 @@
 	name = "swap"
 	icon_state = "swap_1_m"
 	screen_loc = ui_swaphand1
+	mouse_over_pointer = MOUSE_HAND_POINTER
 
 /atom/movable/screen/swap_hand/Click()
 	if(!iscarbon(usr))
@@ -58,11 +84,19 @@
 /atom/movable/screen/swap_hand/human
 	icon_state = "swap_1"
 
+/atom/movable/screen/craft
+	name = "crafting menu"
+	icon = 'icons/mob/screen/midnight.dmi'
+	icon_state = "craft"
+	screen_loc = ui_crafting
+	mouse_over_pointer = MOUSE_HAND_POINTER
+
 /atom/movable/screen/language_menu
 	name = "language menu"
 	icon = 'icons/mob/screen/midnight.dmi'
 	icon_state = "talk_wheel"
 	screen_loc = ui_language_menu
+	mouse_over_pointer = MOUSE_HAND_POINTER
 
 /atom/movable/screen/language_menu/Click()
 	if(isliving(usr))
@@ -113,7 +147,7 @@
 
 /atom/movable/screen/inventory/hand/Click(location, control, params)
 	. = ..()
-	if(.)
+	if(. && iscarbon(usr))
 		var/mob/living/carbon/C = usr
 		C.activate_hand(hand_tag)
 
@@ -134,52 +168,47 @@
 	layer = ABOVE_HUD_LAYER
 	plane = ABOVE_HUD_PLANE
 	icon_state = "backpack_close"
-
+	mouse_over_pointer = MOUSE_HAND_POINTER
 
 /atom/movable/screen/close/Click()
-	if(istype(master, /obj/item/storage))
-		var/obj/item/storage/S = master
-		S.close(usr)
+	var/datum/storage/storage = master
+	storage.hide_from(usr)
 	return TRUE
-
 
 /atom/movable/screen/act_intent
 	name = "intent"
 	icon_state = "help"
 	screen_loc = ui_acti
-
+	mouse_over_pointer = MOUSE_HAND_POINTER
 
 /atom/movable/screen/act_intent/Click(location, control, params)
 	usr.a_intent_change(INTENT_HOTKEY_RIGHT)
-
 
 /atom/movable/screen/act_intent/corner/Click(location, control, params)
 	var/_x = text2num(params2list(params)["icon-x"])
 	var/_y = text2num(params2list(params)["icon-y"])
 
-	if(_x<=16 && _y<=16)
+	if(_x <= 16 && _y <= 16)
 		usr.a_intent_change(INTENT_HARM)
 
-	else if(_x<=16 && _y>=17)
+	else if(_x <= 16 && _y >= 17)
 		usr.a_intent_change(INTENT_HELP)
 
-	else if(_x>=17 && _y<=16)
+	else if(_x >= 17 && _y <= 16)
 		usr.a_intent_change(INTENT_GRAB)
 
-	else if(_x>=17 && _y>=17)
+	else if(_x >= 17 && _y >= 17)
 		usr.a_intent_change(INTENT_DISARM)
-
 
 /atom/movable/screen/mov_intent
 	name = "run/walk toggle"
 	icon = 'icons/mob/screen/midnight.dmi'
 	icon_state = "running"
 	screen_loc = ui_movi
-
+	mouse_over_pointer = MOUSE_HAND_POINTER
 
 /atom/movable/screen/mov_intent/Click()
 	usr.toggle_move_intent()
-
 
 /atom/movable/screen/mov_intent/update_icon_state()
 	. = ..()
@@ -200,6 +229,7 @@
 	icon = 'icons/mob/screen/midnight.dmi'
 	icon_state = "act_rest"
 	screen_loc = ui_above_movement
+	mouse_over_pointer = MOUSE_HAND_POINTER
 
 /atom/movable/screen/rest/Click()
 	if(!isliving(usr))
@@ -219,6 +249,7 @@
 	icon = 'icons/mob/screen/midnight.dmi'
 	icon_state = "pull0"
 	screen_loc = ui_above_movement
+	mouse_over_pointer = MOUSE_HAND_POINTER
 
 
 /atom/movable/screen/pull/Click()
@@ -236,13 +267,12 @@
 	else
 		icon_state = "pull0"
 
-
 /atom/movable/screen/resist
 	name = "resist"
 	icon = 'icons/mob/screen/midnight.dmi'
 	icon_state = "act_resist"
 	screen_loc = ui_above_intent
-
+	mouse_over_pointer = MOUSE_HAND_POINTER
 
 /atom/movable/screen/resist/Click()
 	if(!isliving(usr))
@@ -251,12 +281,39 @@
 	var/mob/living/L = usr
 	L.resist()
 
-
 /atom/movable/screen/storage
 	name = "storage"
 	icon_state = "block"
 	screen_loc = "7,7 to 10,8"
 
+/atom/movable/screen/storage/Click(location, control, params)
+	if(usr.incapacitated(TRUE))
+		return
+
+	var/list/modifiers = params2list(params)
+
+	if(!master)
+		return
+
+	var/datum/storage/current_storage_datum = master
+	var/obj/item/item_in_hand = usr.get_active_held_item()
+	if(item_in_hand)
+		current_storage_datum.parent.attackby(item_in_hand, usr)
+		return
+
+	// Taking something out of the storage screen (including clicking on item border overlay)
+	var/list/screen_loc_params = splittext(modifiers["screen-loc"], ",")
+	var/list/screen_loc_X = splittext(screen_loc_params[1],":")
+	var/click_x = text2num(screen_loc_X[1]) * 32 + text2num(screen_loc_X[2]) - 144
+
+	for(var/i = 1 to length(current_storage_datum.click_border_start))
+		if(current_storage_datum.click_border_start[i] > click_x || click_x > current_storage_datum.click_border_end[i])
+			continue
+		if(length(current_storage_datum.parent.contents) < i)
+			continue
+		item_in_hand = current_storage_datum.parent.contents[i]
+		item_in_hand.attack_hand(usr)
+		return
 
 /atom/movable/screen/storage/proc/update_fullness(obj/item/storage/S)
 	if(!length(S.contents))
@@ -266,7 +323,9 @@
 	var/total_w = 0
 	for(var/obj/item/I in S)
 		total_w += I.w_class
-	var/fullness = round(10 * max(length(S.contents) / S.storage_slots, total_w / S.max_storage_space))
+	var/storage_slot_fullness = S.storage_datum.storage_slots ? (length(S.contents) / S.storage_datum.storage_slots) : 0
+	var/slotless_fullness = S.storage_datum.max_storage_space ? (total_w / S.storage_datum.max_storage_space) : 0
+	var/fullness = round(10 * max(storage_slot_fullness, slotless_fullness))
 	switch(fullness)
 		if(10)
 			color = "#ff0000"
@@ -275,12 +334,13 @@
 		else
 			color = null
 
-
 /atom/movable/screen/throw_catch
 	name = "throw/catch"
 	icon = 'icons/mob/screen/midnight.dmi'
 	icon_state = "act_throw_off"
 	screen_loc = ui_drop_throw
+	mouse_over_pointer = MOUSE_HAND_POINTER
+
 
 /atom/movable/screen/throw_catch/Click()
 	if(!iscarbon(usr))
@@ -292,6 +352,7 @@
 	name = "damage zone"
 	icon_state = "zone_sel"
 	screen_loc = ui_zonesel
+	mouse_over_pointer = MOUSE_HAND_POINTER
 	var/selecting = "chest"
 	var/list/hover_overlays_cache = list()
 	var/hovering
@@ -301,9 +362,9 @@
 	if(isobserver(usr))
 		return
 
-	var/list/PL = params2list(params)
-	var/icon_x = text2num(PL["icon-x"])
-	var/icon_y = text2num(PL["icon-y"])
+	var/list/modifiers = params2list(params)
+	var/icon_x = text2num(modifiers["icon-x"])
+	var/icon_y = text2num(modifiers["icon-y"])
 	var/choice = get_zone_at(icon_x, icon_y)
 	if (!choice)
 		return TRUE
@@ -317,9 +378,9 @@
 	if(isobserver(usr))
 		return
 
-	var/list/PL = params2list(params)
-	var/icon_x = text2num(PL["icon-x"])
-	var/icon_y = text2num(PL["icon-y"])
+	var/list/modifiers = params2list(params)
+	var/icon_x = text2num(modifiers["icon-x"])
+	var/icon_y = text2num(modifiers["icon-y"])
 	var/choice = get_zone_at(icon_x, icon_y)
 
 	if(hovering == choice)
@@ -341,6 +402,8 @@
 	anchored = TRUE
 	layer = ABOVE_HUD_LAYER
 	plane = ABOVE_HUD_PLANE
+	mouse_over_pointer = MOUSE_HAND_POINTER
+
 
 /atom/movable/screen/zone_sel/proc/get_zone_at(icon_x, icon_y)
 	switch(icon_y)
@@ -423,6 +486,8 @@
 	icon_state = "stamloss-14"
 	screen_loc = UI_STAMINA
 	mouse_opacity = MOUSE_OPACITY_ICON
+	mouse_over_pointer = MOUSE_HAND_POINTER
+
 
 /atom/movable/screen/stamina_hud/update_icon_state()
 	. = ..()
@@ -432,7 +497,7 @@
 	if(mymob_human.stat == DEAD)
 		icon_state = "stamloss200"
 		return
-	var/relative_stamloss = mymob_human.getStaminaLoss()
+	var/relative_stamloss = mymob_human.get_stamina_loss()
 	if(relative_stamloss < 0 && mymob_human.max_stamina)
 		relative_stamloss = round(((relative_stamloss * 14) / mymob_human.max_stamina), 1)
 	else
@@ -443,10 +508,10 @@
 	if(!isliving(usr))
 		return
 	var/mob/living/living_user = usr
-	if(living_user.getStaminaLoss() < 0 && living_user.max_stamina)
-		living_user.balloon_alert(living_user, "Stamina buffer:[(-living_user.getStaminaLoss() * 100 / living_user.max_stamina)]%")
+	if(living_user.get_stamina_loss() < 0 && living_user.max_stamina)
+		living_user.balloon_alert(living_user, "Stamina buffer:[(-living_user.get_stamina_loss() * 100 / living_user.max_stamina)]%")
 		return
-	living_user.balloon_alert(living_user, "You have [living_user.getStaminaLoss()] stamina loss")
+	living_user.balloon_alert(living_user, "You have [living_user.get_stamina_loss()] stamina loss")
 
 
 /atom/movable/screen/component_button
@@ -462,6 +527,7 @@
 /atom/movable/screen/action_button
 	icon = 'icons/mob/actions.dmi'
 	icon_state = "template"
+	mouse_over_pointer = MOUSE_HAND_POINTER
 	var/datum/action/source_action
 
 /atom/movable/screen/action_button/Click(location, control, params)
@@ -495,7 +561,9 @@
 	name = "Hide Buttons"
 	icon = 'icons/mob/actions.dmi'
 	icon_state = "hide"
+	mouse_over_pointer = MOUSE_HAND_POINTER
 	var/hidden = 0
+
 
 /atom/movable/screen/action_button/hide_toggle/Click()
 	usr.hud_used.action_buttons_hidden = !usr.hud_used.action_buttons_hidden
@@ -511,7 +579,7 @@
 
 /atom/movable/screen/SL_locator
 	name = "sl locator"
-	icon = 'icons/Marine/marine-items.dmi'
+	icon = 'icons/effects/blips.dmi'
 	icon_state = "Blue_arrow"
 	alpha = 0 //invisible
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
@@ -523,112 +591,18 @@
 	icon_state = "act_drop"
 	screen_loc = ui_drop_throw
 	layer = HUD_LAYER
+	mouse_over_pointer = MOUSE_HAND_POINTER
+
 
 /atom/movable/screen/drop/Click()
 	usr.drop_item_v()
 
-/atom/movable/screen/bodytemp
-	name = "body temperature"
-	icon_state = "temp0"
-	screen_loc = ui_temp
-
-/atom/movable/screen/bodytemp/update_icon_state()
-	. = ..()
-	if(!ishuman(hud?.mymob))
-		return
-	var/mob/living/carbon/human/human_mymob = hud.mymob
-	if(!human_mymob.species)
-		switch(human_mymob.bodytemperature) //310.055 optimal body temp
-			if(370 to INFINITY)
-				icon_state = "temp4"
-			if(350 to 370)
-				icon_state = "temp3"
-			if(335 to 350)
-				icon_state = "temp2"
-			if(320 to 335)
-				icon_state = "temp1"
-			if(300 to 320)
-				icon_state = "temp0"
-			if(295 to 300)
-				icon_state = "temp-1"
-			if(280 to 295)
-				icon_state = "temp-2"
-			if(260 to 280)
-				icon_state = "temp-3"
-			else
-				icon_state = "temp-4"
-		return
-
-	var/temp_step
-	if(human_mymob.bodytemperature >= human_mymob.species.body_temperature)
-		temp_step = (human_mymob.species.heat_level_1 - human_mymob.species.body_temperature) / 4
-
-		if(human_mymob.bodytemperature >= human_mymob.species.heat_level_1)
-			icon_state = "temp4"
-		else if(human_mymob.bodytemperature >= human_mymob.species.body_temperature + temp_step * 3)
-			icon_state = "temp3"
-		else if(human_mymob.bodytemperature >= human_mymob.species.body_temperature + temp_step * 2)
-			icon_state = "temp2"
-		else if(human_mymob.bodytemperature >= human_mymob.species.body_temperature + temp_step * 1)
-			icon_state = "temp1"
-		else
-			icon_state = "temp0"
-		return
-
-	if(human_mymob.bodytemperature < human_mymob.species.body_temperature)
-		temp_step = (human_mymob.species.body_temperature - human_mymob.species.cold_level_1)/4
-
-		if(human_mymob.bodytemperature <= human_mymob.species.cold_level_1)
-			icon_state = "temp-4"
-		else if(human_mymob.bodytemperature <= human_mymob.species.body_temperature - temp_step * 3)
-			icon_state = "temp-3"
-		else if(human_mymob.bodytemperature <= human_mymob.species.body_temperature - temp_step * 2)
-			icon_state = "temp-2"
-		else if(human_mymob.bodytemperature <= human_mymob.species.body_temperature - temp_step * 1)
-			icon_state = "temp-1"
-		else
-			icon_state = "temp0"
-
-/atom/movable/screen/nutrition
-	name = "nutrition"
-	icon_state = "nutrition1"
-	screen_loc = ui_nutrition
-
-/atom/movable/screen/nutrition/update_icon_state()
-	. = ..()
-	if(!ishuman(hud?.mymob))
-		return
-	var/mob/living/carbon/human/human_mymob = hud.mymob
-	switch(human_mymob.nutrition)
-		if(NUTRITION_OVERFED to INFINITY)
-			icon_state = "nutrition0"
-		if(NUTRITION_HUNGRY to NUTRITION_OVERFED) //Not-hungry.
-			icon_state = "nutrition1" //Empty icon.
-		if(NUTRITION_STARVING to NUTRITION_HUNGRY)
-			icon_state = "nutrition3"
-		else
-			icon_state = "nutrition4"
-
-/atom/movable/screen/fire
-	name = "body temperature"
-	icon_state = "fire0"
-	screen_loc = ui_fire
-
-/atom/movable/screen/fire/update_icon_state()
-	. = ..()
-	if(!ishuman(hud?.mymob))
-		return
-	var/mob/living/carbon/human/human_mymob = hud.mymob
-	if(human_mymob.fire_alert)
-		icon_state = "fire[human_mymob.fire_alert]" //fire_alert is either 0 if no alert, 1 for cold and 2 for heat.
-	else
-		icon_state = "fire0"
-
 /atom/movable/screen/toggle_inv
-	name = "toggle"
+	name = "toggle inventory"
 	icon = 'icons/mob/screen/midnight.dmi'
 	icon_state = "toggle"
 	screen_loc = ui_inventory
+	mouse_over_pointer = MOUSE_HAND_POINTER
 
 /atom/movable/screen/toggle_inv/Click()
 	if(usr.hud_used.inventory_shown)
@@ -723,7 +697,7 @@
 #undef AMMO_HUD_ICON_EMPTY
 
 /atom/movable/screen/arrow
-	icon = 'icons/Marine/marine-items.dmi'
+	icon = 'icons/effects/blips.dmi'
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	screen_loc = ui_sl_dir
 	alpha = 128 //translucent
@@ -786,27 +760,27 @@
 /atom/movable/screen/arrow/silo_damaged_arrow
 	name = "Hive damaged tracker arrow"
 	icon_state = "Red_arrow"
-	duration = XENO_SILO_DAMAGE_POINTER_DURATION
+	duration = XENO_STRUCTURE_DAMAGE_POINTER_DURATION
 
 /atom/movable/screen/arrow/turret_attacking_arrow
 	name = "Turret attacking arrow"
 	icon_state = "Green_arrow"
-	duration = XENO_SILO_DAMAGE_POINTER_DURATION
+	duration = XENO_STRUCTURE_DAMAGE_POINTER_DURATION
 
 /atom/movable/screen/arrow/attack_order_arrow
 	name = "attack order arrow"
 	icon_state = "Attack_arrow"
-	duration = ORDER_DURATION
+	duration = CIC_ORDER_DURATION
 
 /atom/movable/screen/arrow/rally_order_arrow
 	name = "Rally order arrow"
 	icon_state = "Rally_arrow"
-	duration = RALLY_ORDER_DURATION
+	duration = CIC_ORDER_DURATION
 
 /atom/movable/screen/arrow/defend_order_arrow
 	name = "Defend order arrow"
 	icon_state = "Defend_arrow"
-	duration = ORDER_DURATION
+	duration = CIC_ORDER_DURATION
 
 /atom/movable/screen/arrow/hunter_mark_arrow
 	name = "hunter mark arrow"

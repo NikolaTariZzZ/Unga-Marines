@@ -56,14 +56,14 @@ explosion resistance exactly as much as their health
 	msg_admin_ff("Explosion with Power: [power], Falloff: [falloff] in area [epicenter.loc.name] ([epicenter.x],[epicenter.y],[epicenter.z]).", src.loc.x, src.loc.y, src.loc.z [ADMIN_JMP(epicenter)])
 
 	playsound(epicenter, 'sound/effects/explosion/far0.ogg', 100, 1, round(power ^ 2, 1))
-	var/sound/explosion_sound = sound(get_sfx("explosion_large"))
+	var/sound/explosion_sound = SFX_EXPLOSION_LARGE
 	switch(power)
 		if(0 to EXPLODE_LIGHT)
-			explosion_sound = sound(get_sfx("explosion_small"))
+			explosion_sound = SFX_EXPLOSION_SMALL
 		if(EXPLODE_LIGHT to EXPLODE_HEAVY)
-			explosion_sound = sound(get_sfx("explosion_med"))
+			explosion_sound = SFX_EXPLOSION_MED
 		if(EXPLODE_HEAVY to INFINITY)
-			explosion_sound = sound(get_sfx("explosion_large"))
+			explosion_sound = SFX_EXPLOSION_LARGE
 	playsound(epicenter, get_sfx("explosion"), 90, 1, max(round(power, 1), 7))
 	playsound(epicenter, explosion_sound, 90, 1, falloff = 5)
 
@@ -281,22 +281,24 @@ explosion resistance exactly as much as their health
 	INVOKE_ASYNC(src, TYPE_PROC_REF(/atom/movable, throw_at), target, range, speed, null, TRUE, targetted_throw = FALSE)
 
 /mob/proc/explosion_throw(severity, direction)
+	if(severity <= 0)
+		return
 	if(anchored || !isturf(loc))
 		return
 
 	var/weight = 1
 	switch(mob_size)
 		if(MOB_SIZE_SMALL)
-			weight = 0.25
+			weight = 4
 		if(MOB_SIZE_HUMAN)
 			weight = 1
 		if(MOB_SIZE_XENO)
-			weight = 1.5
+			weight = 0.66
 		if(MOB_SIZE_BIG)
-			weight = 4
-	var/range = round(severity / weight * 0.02, 1)
+			weight = 0.25
+	var/range = round(severity * weight * 0.02, 1)
 	if(!direction)
-		range = round(range / 1.5, 1)
+		range = round(range * 0.66, 1)
 		direction = pick(NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST)
 
 	if(range <= 0)
@@ -304,12 +306,12 @@ explosion resistance exactly as much as their health
 
 	var/speed = max(range * 1.5, 4)
 	var/atom/target = get_ranged_target_turf(src, direction, range)
-	var/spin = 0
+	var/spin = FALSE
 
 	if(range > 1)
-		spin = 1
+		spin = TRUE
 	if(range >= 2)
-		var/scatter = range / 4
+		var/scatter = range * 0.25
 		var/scatter_x = rand(-scatter, scatter)
 		var/scatter_y = rand(-scatter, scatter)
 		target = locate(target.x + round(scatter_x, 1),target.y + round(scatter_y, 1), target.z) //Locate an adjacent turf.

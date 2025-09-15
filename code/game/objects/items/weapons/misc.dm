@@ -2,25 +2,25 @@
 	name = "chain of command"
 	desc = "A tool used by great men to placate the frothing masses."
 	icon_state = "chain"
-	item_state = "chain"
-	flags_atom = CONDUCT
-	flags_equip_slot = ITEM_SLOT_BELT
+	worn_icon_state = "chain"
+	atom_flags = CONDUCT
+	equip_slot_flags = ITEM_SLOT_BELT
 	force = 10
 	throwforce = 7
 	w_class = WEIGHT_CLASS_NORMAL
-	attack_verb = list("flogged", "whipped", "lashed", "disciplined")
+	attack_verb = list("flogs", "whips", "lashes", "disciplines")
 
 /obj/item/weapon/cane
 	name = "cane"
 	desc = "A cane used by a true gentlemen. Or a clown."
 	icon = 'icons/obj/items/weapons.dmi'
 	icon_state = "cane"
-	item_state = "cane"
-	flags_atom = CONDUCT
+	worn_icon_state = "cane"
+	atom_flags = CONDUCT
 	force = 5
 	throwforce = 7
 	w_class = WEIGHT_CLASS_SMALL
-	attack_verb = list("bludgeoned", "whacked", "disciplined", "thrashed")
+	attack_verb = list("bludgeons", "whacks", "disciplines", "thrashes")
 
 /obj/item/weapon/broken_bottle
 	name = "Broken Bottle"
@@ -31,8 +31,8 @@
 	throwforce = 5
 	throw_speed = 3
 	throw_range = 5
-	item_state = "broken_beer"
-	attack_verb = list("stabbed", "slashed", "attacked")
+	worn_icon_state = "broken_beer"
+	attack_verb = list("stabs", "slashes", "attacks")
 	sharp = IS_SHARP_ITEM_SIMPLE
 	edge = 0
 	var/icon/broken_outline = icon('icons/obj/items/drinks.dmi', "broken")
@@ -43,12 +43,13 @@
 
 /obj/item/weapon/powerfist
 	name = "powerfist"
-	desc = "A metal gauntlet with a energy-powered fist to throw back enemies. Altclick to clamp it around your hand, use it to change power settings and click with an empty off-hand or right click to pop out the cell."
+	desc = "A metal gauntlet with a energy-powered fist to throw back enemies."
 	icon_state = "powerfist"
-	item_state = "powerfist"
-	flags_equip_slot = ITEM_SLOT_BELT
+	worn_icon_state = "powerfist"
+	equip_slot_flags = ITEM_SLOT_BELT
 	force = 10
-	attack_verb = list("smashed", "rammed", "power-fisted")
+	attack_verb = list("smashes", "rams", "power-fists")
+	///Our inner cell
 	var/obj/item/cell/cell
 	///the higher the power level the harder it hits
 	var/setting = 1
@@ -69,19 +70,19 @@
 
 /obj/item/weapon/powerfist/examine(user)
 	. = ..()
-	var/powerused = setting * 20
-	. += "It's power setting is set to [setting]."
+	. += span_notice("Use it <b>In-Hand</b> to change power settings. It's power setting is set to <b>[setting]</b>.")
 	if(cell)
-		. += "It has [round(cell.charge/powerused, 1)] level [setting] punches remaining."
+		. += span_notice("<b>Click</b> on the gauntlet to pop out the cell.")
+		. += span_notice("It has <b>[round(cell.charge / (setting * 20), 1)]</b> level <b>[setting]</b> punches remaining.")
 	else
-		. += "There is no cell installed!"
+		. += span_notice("There is no <b>cell</b> installed!")
 
 /obj/item/weapon/powerfist/attack_self(mob/user)
 	. = ..()
-	if(setting == 3)
+	if(setting >= 3)
 		setting = 1
 	else
-		setting += 1
+		setting++
 	balloon_alert(user, "Power level [setting].")
 
 /obj/item/weapon/powerfist/attack(mob/living/carbon/M, mob/living/carbon/user)
@@ -96,7 +97,7 @@
 	if(powerused > cell.charge)
 		to_chat(user, span_warning("\The [src]'s cell doesn't have enough power!"))
 		M.apply_damage((force * 0.2), BRUTE, user.zone_selected, MELEE)
-		playsound(loc, 'sound/weapons/punch1.ogg', 50, TRUE)
+		hitsound = 'sound/weapons/punch1.ogg'
 		if(M == user)
 			to_chat(user, span_userdanger("You punch yourself!"))
 		else
@@ -132,7 +133,7 @@
 		return
 	if(cell)
 		unload(user)
-	user.transferItemToLoc(I,src)
+	user.transferItemToLoc(I, src)
 	cell = I
 	update_icon()
 	user.balloon_alert(user, "Cell inserted")
@@ -163,13 +164,22 @@
 	update_icon()
 	playsound(user, 'sound/weapons/guns/interact/rifle_reload.ogg', 25, TRUE)
 
+/obj/item/weapon/powerfist/full
+	setting = 3
+
+/obj/item/weapon/powerfist/full/Initialize(mapload)
+	var/obj/item/cell/lasgun/lasrifle/future_cell = new(src) // snowflaky, but we don't use it often, so it's fine?
+	future_cell.forceMove(src)
+	cell = future_cell
+	return ..()
+
 /obj/item/weapon/brick
 	name = "brick"
 	desc = "It's a brick. Commonly used to hit things, occasionally used to build stuff instead."
 	icon_state = "brick"
 	force = 30
 	throwforce = 40
-	attack_verb = list("smacked", "whacked", "bonked", "bricked", "thwacked", "socked", "donked")
+	attack_verb = list("smacks", "whacks", "bonks", "bricks", "thwacks", "socks", "donks")
 	hitsound = 'sound/weapons/heavyhit.ogg'
 
 /obj/item/stack/throwing_knife/stone
@@ -181,8 +191,8 @@
 	max_amount = 12
 	amount = 12
 	throw_delay = 0.3 SECONDS
-	attack_verb = list("smacked", "whacked", "bonked", "pelted", "thwacked", "cracked")
+	attack_verb = list("smacks", "whacks", "bonks", "pelts", "thwacks", "cracks")
 	hitsound = 'sound/weapons/heavyhit.ogg'
 	singular_name = "stone"
-	flags_atom = DIRLOCK
+	atom_flags = DIRLOCK
 	sharp = IS_NOT_SHARP_ITEM

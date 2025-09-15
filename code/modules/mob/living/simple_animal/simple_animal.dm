@@ -44,9 +44,6 @@
 
 	//Attack
 	melee_damage = 0
-	attacktext = "attacks"
-	attack_sound = null
-	friendly = "nuzzles" //If the mob does no damage with it's attack
 	var/obj_damage = 0 //how much damage this simple animal does to objects, if any
 	var/attacked_sound = "punch" //Played when someone punches the creature
 	var/armour_penetration = 0 //How much armour they ignore, as a flat reduction from the targets armour value
@@ -75,7 +72,7 @@
 
 	return ..()
 
-/mob/living/simple_animal/updatehealth()
+/mob/living/simple_animal/update_health()
 	. = ..()
 	health = clamp(health, 0, maxHealth)
 
@@ -114,7 +111,7 @@
 /mob/living/simple_animal/set_blurriness()
 	return
 
-/mob/living/simple_animal/death(gibbing, deathmessage, silent)
+/mob/living/simple_animal/death(gibbing = FALSE, deathmessage = "seizes up and falls limp...", silent = FALSE)
 	if(stat == DEAD)
 		return ..()
 	if(!silent && !gibbing && !del_on_death && !deathmessage && src.deathmessage)
@@ -211,7 +208,7 @@
 		gib()
 		return
 
-	adjustBruteLoss(severity * 0.3)
+	adjust_brute_loss(severity * 0.3)
 	UPDATEHEALTH(src)
 
 /mob/living/simple_animal/get_idcard(hand_first)
@@ -334,5 +331,5 @@
 		return FALSE
 	bruteloss = round(clamp(bruteloss + amount, 0, maxHealth), 0.1)
 	if(updating_health)
-		updatehealth()
+		update_health()
 	return amount

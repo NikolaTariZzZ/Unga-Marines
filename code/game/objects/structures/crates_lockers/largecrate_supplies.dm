@@ -17,7 +17,6 @@
 					new s (pick(T))
 	return INITIALIZE_HINT_QDEL
 
-
 /obj/effect/landmark/supplyspawner/weapons
 	name = "weapon supplies"
 	supply = list(
@@ -36,7 +35,6 @@
 	name = "ammunition supplies"
 	supply = list(
 		/obj/structure/largecrate/supply/ammo/m41a = 4,
-		/obj/structure/largecrate/supply/ammo/m41a_box = 4,
 		/obj/structure/largecrate/supply/ammo/shotgun = 4,
 		/obj/structure/largecrate/supply/ammo/smg90 = 4,
 		/obj/structure/largecrate/supply/ammo/pistol = 4,
@@ -151,7 +149,7 @@
 		/obj/item/ammo_magazine/at36/he = 3,
 	)
 
-/obj/structure/largecrate/supply/weapons/standard_flakgun
+/obj/structure/largecrate/supply/weapons/atr22
 	name = "\improper ATR-22 flak gun and ammo chest (x1, x6)"
 	desc = "A supply crate containing a ATR-22 and a full set of ammo to load into the sponson."
 	supplies = list(
@@ -159,6 +157,11 @@
 		/obj/item/ammo_magazine/atr22 = 3,
 		/obj/item/ammo_magazine/atr22/flak = 3,
 	)
+
+/obj/structure/largecrate/supply/weapons/fk88
+	name = "\improper FK-88 mounted flak gun (x1)"
+	desc = "A supply crate containing a FK-88 mounted flak gun. Ammo sold separately."
+	supplies = list(/obj/item/weapon/gun/fk88 = 1)
 
 /obj/structure/largecrate/supply/ammo
 	name = "ammunition case"
@@ -168,11 +171,6 @@
 	name = "\improper PR-412 magazine case (x20)"
 	desc = "An ammunition case containing 20 PR-412 magazines."
 	supplies = list(/obj/item/ammo_magazine/rifle = 20)
-
-/obj/structure/largecrate/supply/ammo/m41a_box
-	name = "\improper PR-412 ammunition box case (x4)"
-	desc = "An ammunition case containing four PR-412 600 round boxes of ammunition."
-	supplies = list(/obj/item/big_ammo_box = 4)
 
 /obj/structure/largecrate/supply/ammo/shotgun
 	name = "12 Gauge ammunition crate (x20)"
@@ -208,6 +206,7 @@
 		/obj/item/shotgunbox/buckshot = 1,
 		/obj/item/shotgunbox/flechette = 1,
 		/obj/item/shotgunbox/tracker = 1,
+		/obj/item/shotgunbox/blank = -1,
 		/obj/item/storage/box/visual/magazine/compact/p14/full = 1,
 		/obj/item/storage/box/visual/magazine/compact/p23/full = 1,
 		/obj/item/storage/box/visual/magazine/compact/r44/full = 1,
@@ -226,8 +225,6 @@
 		/obj/item/storage/box/visual/magazine/compact/mg27/full = 1,
 	)
 
-
-
 /obj/structure/largecrate/supply/explosives
 	name = "explosives supply crate"
 	desc = "A case containing explosives."
@@ -235,7 +232,7 @@
 
 /obj/structure/largecrate/supply/explosives/mines
 	name = "\improper M20 claymore case (x20)"
-	desc = "A case containing five four M20 claymore boxes."
+	desc = "A case containing five four-count M20 claymore boxes."
 	supplies = list(/obj/item/storage/box/explosive_mines = 5)
 
 /obj/structure/largecrate/supply/explosives/grenades
@@ -259,7 +256,7 @@
 	supplies = list(/obj/item/mortal_shell/flare = 25)
 
 /obj/structure/largecrate/supply/explosives/disposable
-	name = "RL-72 disposable rocket launchers (x8)"
+	name = "\improper RL-72 disposable rocket launcher crate (x8)"
 	desc = "A case containing eight RL-72 disposables."
 	supplies = list(/obj/item/weapon/gun/launcher/rocket/oneuse = 8)
 
@@ -268,12 +265,12 @@
 	icon_state = "secure_crate"
 
 /obj/structure/largecrate/supply/supplies/flares
-	name = "Flare supply crate (x100)"
+	name = "flare supply crate (x100)"
 	desc = "A supply crate containing twenty five-flare boxes."
 	supplies = list(/obj/item/storage/box/m94 = 10)
 
 /obj/structure/largecrate/supply/supplies/coifs
-	name = "Heat absorbent coifs supply crate (x25)"
+	name = "heat absorbent coifs supply crate (x25)"
 	desc = "A supply crate containing twenty five heat absorbent coifs."
 	supplies = list(/obj/item/clothing/mask/rebreather/scarf = 25)
 
@@ -300,7 +297,7 @@
 /obj/structure/largecrate/supply/supplies/mre
 	name = "\improper TGMC MRE crate (x50)"
 	desc = "A supply crate containing fifty TGMC MRE packets."
-	supplies = list(/obj/item/storage/box/MRE = 50)
+	supplies = list(/obj/item/storage/box/mre = 50)
 
 /obj/structure/largecrate/supply/supplies/water
 	name = "\improper NT Bottled Water crate (x50)"
@@ -359,88 +356,72 @@
 	desc = "A crate containing one Nanotrasen Plus medical vendor."
 	supplies = list(/obj/machinery/vending/medical = 1)
 
-
 /obj/structure/largecrate/machine
 	name = "machine crate"
 	desc = "A crate containing a pre-assembled machine."
 	icon_state = "secure_crate_strapped"
-	var/dir_needed = EAST //If set to anything but 0, will check that space before spawning in.
-	var/unmovable = 1 //If set to 1, then on examine, the user will see a warning that states the contents cannot be moved after opened.
+	/// If set to anything but 0, will check that space before spawning in.
+	var/dir_needed = EAST
+	/// If set to 1, then on examine, the user will see a warning that states the contents cannot be moved after opened.
+	var/unmovable = 1
 
 /obj/structure/largecrate/machine/examine(mob/user)
 	. = ..()
 	if(unmovable)
 		. += "<b>!!WARNING!! CONTENTS OF CRATE UNABLE TO BE MOVED ONCE UNPACKAGED!</b>"
 
-/obj/structure/largecrate/machine/attackby(obj/item/I, mob/user, params)
-	if(iscrowbar(I) && dir_needed)
-		var/turf/next_turf = get_step(src, dir_needed)
-		if(next_turf.density)
-			to_chat(user, span_warning("You can't open the crate here, there's not enough room!"))
-			return
-		for(var/atom/movable/AM in next_turf.contents)
-			if(AM.density)
-				to_chat(user, span_warning("You can't open the crate here, [AM] blocks the way."))
-				return
-		return TRUE
-	return ..()
-
+/obj/structure/largecrate/machine/crowbar_act(mob/living/user, obj/item/I)
+	. = ..()
+	if(!dir_needed)
+		return
+	var/turf/next_turf = get_step(src, dir_needed)
+	if(next_turf.density)
+		to_chat(user, span_warning("You can't open the crate here, there's not enough room!"))
+		return
+	for(var/atom/movable/AM in next_turf.contents)
+		if(AM.density)
+			to_chat(user, span_warning("You can't open the crate here, [AM] blocks the way."))
 
 /obj/structure/largecrate/machine/autodoc
 	name = "autodoctor machine crate (x1)"
 	desc = "A crate containing one autodoc."
 
-/obj/structure/largecrate/machine/autodoc/attackby(obj/item/I, mob/user, params)
+/obj/structure/largecrate/machine/autodoc/crowbar_act(mob/living/user, obj/item/I)
 	. = ..()
-	if(!.)
+	var/turf/T = get_turf(loc)
+	if(!isopenturf(T))
 		return
-
-	if(iscrowbar(I))
-		var/turf/T = get_turf(loc)
-		if(!isopenturf(T))
-			return
-
-		var/obj/machinery/autodoc/event/E = new (T)
-		var/obj/machinery/computer/autodoc_console/C = new (T)
-		C.loc = get_step(T, EAST)
-		E.connected = C
-		C.connected = E
+	var/obj/machinery/autodoc/event/E = new (T)
+	var/obj/machinery/computer/autodoc_console/C = new (T)
+	C.loc = get_step(T, EAST)
+	E.connected = C
+	C.connected = E
 
 /obj/structure/largecrate/machine/bodyscanner
 	name = "bodyscanner machine crate (x1)"
 	desc = "A crate containing one medical bodyscanner."
 
-/obj/structure/largecrate/supply/machine/bodyscanner/attackby(obj/item/I, mob/user, params)
+/obj/structure/largecrate/supply/machine/bodyscanner/crowbar_act(mob/living/user, obj/item/I)
 	. = ..()
-	if(!.)
+	var/turf/T = get_turf(loc)
+	if(!isopenturf(T))
 		return
-
-	if(iscrowbar(I))
-		var/turf/T = get_turf(loc)
-		if(!isopenturf(T))
-			return
-
-		var/obj/machinery/bodyscanner/E = new (T)
-		var/obj/machinery/computer/body_scanconsole/C = new (T)
-		C.loc = get_step(T, EAST)
-		C.connected = E
+	var/obj/machinery/bodyscanner/E = new (T)
+	var/obj/machinery/computer/body_scanconsole/C = new (T)
+	C.loc = get_step(T, EAST)
+	C.connected = E
 
 /obj/structure/largecrate/machine/sleeper
 	name = "sleeper machine crate (x1)"
 	desc = "A crate containing one medical sleeper."
 
-/obj/structure/largecrate/machine/sleeper/attackby(obj/item/I, mob/user, params)
+/obj/structure/largecrate/machine/sleeper/crowbar_act(mob/living/user, obj/item/I)
 	. = ..()
-	if(!.)
+	var/turf/T = get_turf(loc)
+	if(!isopenturf(T))
 		return
-
-	if(iscrowbar(I))
-		var/turf/T = get_turf(loc)
-		if(!isopenturf(T))
-			return
-
-		var/obj/machinery/sleeper/E = new (T)
-		var/obj/machinery/computer/sleep_console/C = new (T)
-		C.loc = get_step(T, EAST)
-		E.connected = C
-		C.connected = E
+	var/obj/machinery/sleeper/E = new (T)
+	var/obj/machinery/computer/sleep_console/C = new (T)
+	C.loc = get_step(T, EAST)
+	E.connected = C
+	C.connected = E

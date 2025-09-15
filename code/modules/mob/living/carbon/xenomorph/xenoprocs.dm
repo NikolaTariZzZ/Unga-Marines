@@ -69,9 +69,11 @@
 	return
 
 /mob/living/carbon/xenomorph/proc/toggle_rouny()
+	#ifndef TESTING
 	if(SSdiscord.get_boosty_tier(ckey) < BOOSTY_TIER_3)
 		to_chat(usr, span_notice("You need a higher boosty tier to use this."))
 		return
+	#endif
 
 	if(!rouny_icon)
 		to_chat(usr, span_notice("Sorry, but rouny skin is currently unavailable for this caste."))
@@ -93,9 +95,11 @@
 		balloon_alert(src, "Your caste does not have the ability to change appearance.")
 		return
 
+	#ifndef TESTING
 	if(SSdiscord.get_boosty_tier(ckey) < BOOSTY_TIER_2)
 		to_chat(usr, span_notice("You need a higher boosty tier to use this."))
 		return
+	#endif
 
 	var/datum/xenomorph_skin/selection
 	var/list/available_skins = list() // we do a list of names instead of datums
@@ -127,7 +131,7 @@
 			else
 				if(X.nicknumber != xeno_name)
 					continue
-			to_chat(usr,span_notice(" You will now track [X.name]"))
+			to_chat(usr,span_notice("You will now track [X.name]"))
 			set_tracked(X)
 			break
 
@@ -136,7 +140,7 @@
 		for(var/obj/structure/xeno/silo/resin_silo AS in GLOB.xeno_resin_silos_by_hive[hivenumber])
 			if(num2text(resin_silo.number_silo) == silo_number)
 				set_tracked(resin_silo)
-				to_chat(usr,span_notice(" You will now track [resin_silo.name]"))
+				to_chat(usr,span_notice("You will now track [resin_silo.name]"))
 				break
 
 	if(href_list["watch_xeno_name"])
@@ -175,6 +179,84 @@
 	var/datum/hive_status/HS = GLOB.hive_datums[hivenumber]
 	HS.xeno_message(message, span_class, size, force, target, sound, apply_preferences, filter_list, arrow_type, arrow_color, report_distance)
 
+/mob/living/carbon/xenomorph/proc/upgrade_xeno(newlevel, silent = FALSE)
+	if(!(newlevel in (GLOB.xenoupgradetiers - XENO_UPGRADE_INVALID)))
+		return FALSE
+	hive.upgrade_xeno(src, upgrade, newlevel)
+	upgrade = newlevel
+	if(!silent)
+		visible_message(span_xenonotice("\The [src] begins to twist and contort."), \
+		span_xenonotice("We begin to twist and contort."))
+		do_jitter_animation(1000)
+	set_datum(FALSE)
+	var/selected_ability_type = selected_ability?.type
+
+	var/list/datum/action/ability/xeno_action/actions_already_added = mob_abilities
+	mob_abilities = list()
+
+	for(var/allowed_action_path in xeno_caste.actions)
+		var/found = FALSE
+		for(var/datum/action/ability/xeno_action/action_already_added AS in actions_already_added)
+			if(action_already_added.type == allowed_action_path)
+				mob_abilities.Add(action_already_added)
+				actions_already_added.Remove(action_already_added)
+				found = TRUE
+				break
+		if(found)
+			continue
+		var/datum/action/ability/xeno_action/action = new allowed_action_path()
+		if(!SSticker.mode || (SSticker.mode.xeno_abilities_flags & action.gamemode_flags))
+			action.give_action(src)
+
+	for(var/datum/action/ability/xeno_action/action_already_added AS in actions_already_added)
+		action_already_added.remove_action(src)
+
+	SEND_SIGNAL(src, COMSIG_XENOMORPH_ABILITY_ON_UPGRADE)
+	if(selected_ability_type)
+		for(var/datum/action/ability/activable/xeno/activable_ability in actions)
+			if(selected_ability_type != activable_ability.type)
+				continue
+			activable_ability.select()
+			break
+
+	if(xeno_flags & XENO_LEADER)
+		give_rally_abilities() //Give them back their rally hive ability
+
+	if(current_aura) //Updates pheromone strength
+		current_aura.range = 6 + xeno_caste.aura_strength * 2
+		current_aura.strength = xeno_caste.aura_strength
+
+	switch(upgrade)
+		if(XENO_UPGRADE_NORMAL)
+			switch(tier)
+				if(XENO_TIER_TWO)
+					SSmonitor.stats.normal_T2++
+				if(XENO_TIER_THREE)
+					SSmonitor.stats.normal_T3++
+				if(XENO_TIER_FOUR)
+					SSmonitor.stats.normal_T4++
+		if(XENO_UPGRADE_PRIMO)
+			switch(tier)
+				if(XENO_TIER_TWO)
+					SSmonitor.stats.primo_T2++
+				if(XENO_TIER_THREE)
+					SSmonitor.stats.primo_T3++
+				if(XENO_TIER_FOUR)
+					SSmonitor.stats.primo_T4++
+			if(!silent)
+				to_chat(src, span_xenoannounce(xeno_caste.primordial_message))
+
+	generate_name() //Give them a new name now
+
+	hud_set_plasma()
+	med_hud_set_health()
+	hud_update_primo()
+
+	hud_set_queen_overwatch() //update the upgrade level insignia on our xeno hud.
+
+	update_spits() //Update spits to new/better ones
+	return TRUE
+
 ///returns TRUE if we are permitted to evo to the next caste FALSE otherwise
 /mob/living/carbon/xenomorph/proc/upgrade_possible()
 	if(!(upgrade in GLOB.xenoupgradetiers))
@@ -206,7 +288,7 @@
 	if(xeno_caste.plasma_max > 0)
 		. += "Plasma: [plasma_stored]/[xeno_caste.plasma_max]"
 
-	. += "Sunder: [100-sunder]% armor left"
+	. += "Armor: [100-sunder]%"
 
 	. += "Regeneration power: [max(regen_power * 100, 0)]%"
 
@@ -218,7 +300,7 @@
 	else
 		. += "Caste Swap Timer: [(casteswap_value / 60) % 60]:[add_leading(num2text(casteswap_value % 60), 2, "0")]"
 
-	//Very weak <= 1.0, weak <= 2.0, no modifier 2-3, strong <= 3.5, very strong <= 4.5
+	//Very weak <= 1.0, Weak <= 2.0, Medium < 3.0, Strong < 4.0, Very strong >= 4.0
 	var/msg_holder = ""
 	if(frenzy_aura)
 		switch(frenzy_aura)
@@ -232,7 +314,7 @@
 				msg_holder = "Strong"
 			if(4.0 to INFINITY)
 				msg_holder = "Very strong"
-		. += "[AURA_XENO_FRENZY] pheromone strength: [msg_holder]"
+		. += "[AURA_XENO_FRENZY] pheromone strength: [msg_holder] ([frenzy_aura])"
 	if(warding_aura)
 		switch(warding_aura)
 			if(-INFINITY to 1.0)
@@ -245,7 +327,7 @@
 				msg_holder = "Strong"
 			if(4.0 to INFINITY)
 				msg_holder = "Very strong"
-		. += "[AURA_XENO_WARDING] pheromone strength: [msg_holder]"
+		. += "[AURA_XENO_WARDING] pheromone strength: [msg_holder] ([warding_aura])"
 	if(recovery_aura)
 		switch(recovery_aura)
 			if(-INFINITY to 1.0)
@@ -258,7 +340,7 @@
 				msg_holder = "Strong"
 			if(4.0 to INFINITY)
 				msg_holder = "Very strong"
-		. += "[AURA_XENO_RECOVERY] pheromone strength: [msg_holder]"
+		. += "[AURA_XENO_RECOVERY] pheromone strength: [msg_holder] ([recovery_aura])"
 
 //A simple handler for checking your state. Used in pretty much all the procs.
 /mob/living/carbon/xenomorph/proc/check_state()
@@ -315,10 +397,9 @@
 		return
 	add_movespeed_modifier(MOVESPEED_ID_XENO_CASTE_SPEED, TRUE, 0, NONE, TRUE, new_speed)
 
-
 //Stealth handling
 
-/mob/living/carbon/xenomorph/proc/update_progression()
+/mob/living/carbon/xenomorph/proc/update_progression(seconds_per_tick)
 	if(!upgrade_possible())
 		return
 	if(incapacitated())
@@ -326,7 +407,7 @@
 	//instant upgrade
 	upgrade_xeno(upgrade_next())
 
-/mob/living/carbon/xenomorph/proc/update_evolving()
+/mob/living/carbon/xenomorph/proc/update_evolving(seconds_per_tick)
 	if(evolution_stored >= xeno_caste.evolution_threshold || !(xeno_caste.caste_flags & CASTE_EVOLUTION_ALLOWED) || HAS_TRAIT(src, TRAIT_VALHALLA_XENO))
 		return
 	if(!hive.check_ruler() && caste_base_type != /datum/xeno_caste/larva) // Larva can evolve without leaders at round start.
@@ -336,7 +417,8 @@
 	var/datum/job/xeno_job = SSjob.GetJobType(/datum/job/xenomorph)
 	var/stored_larva = xeno_job.total_positions - xeno_job.current_positions
 	var/evolution_points = 1 + (FLOOR(stored_larva / 3, 1)) + hive.get_evolution_boost() + spec_evolution_boost()
-	evolution_stored = min(evolution_stored + evolution_points, xeno_caste.evolution_threshold)
+	var/evolution_points_lag = evolution_points * seconds_per_tick * XENO_PER_SECOND_LIFE_MOD
+	evolution_stored = min(evolution_stored + evolution_points_lag, xeno_caste.evolution_threshold)
 
 	if(!client || !ckey)
 		return
@@ -397,17 +479,16 @@
 
 /mob/living/carbon/xenomorph/proc/zoom_in(tileoffset = 5, viewsize = 12)
 	if(stat || resting)
-		if(is_zoomed)
-			is_zoomed = FALSE
+		if(xeno_flags & XENO_ZOOMED)
 			zoom_out()
 			return
 		return
-	if(is_zoomed)
+	if(xeno_flags & XENO_ZOOMED)
 		return
 	if(!client)
 		return
 	zoom_turf = get_turf(src)
-	is_zoomed = TRUE
+	ENABLE_BITFIELD(xeno_flags, XENO_ZOOMED)
 	client.view_size.set_view_radius_to((viewsize * 0.5) - 2) //convert diameter to radius
 	var/viewoffset = 32 * tileoffset
 	switch(dir)
@@ -425,7 +506,7 @@
 			client.pixel_y = 0
 
 /mob/living/carbon/xenomorph/proc/zoom_out()
-	is_zoomed = FALSE
+	DISABLE_BITFIELD(xeno_flags, XENO_ZOOMED)
 	zoom_turf = null
 	if(!client)
 		return
@@ -441,14 +522,12 @@
 		if(locate(/turf/closed/wall/resin) in loc)
 			to_chat(src, span_warning("We decide not to drop [F] after all."))
 			return
-
-	. = ..()
-
+	return ..()
 
 //When the Queen's pheromones are updated, or we add/remove a leader, update leader pheromones
 /mob/living/carbon/xenomorph/proc/handle_xeno_leader_pheromones(mob/living/carbon/xenomorph/queen/Q)
 	QDEL_NULL(leader_current_aura)
-	if(QDELETED(Q) || !queen_chosen_lead || !Q.current_aura || Q.loc.z != loc.z) //We are no longer a leader, or the Queen attached to us has dropped from her ovi, disabled her pheromones or even died
+	if(QDELETED(Q) || !(xeno_flags & XENO_LEADER) || !Q.current_aura || Q.loc.z != loc.z) //We are no longer a leader, or the Queen attached to us has dropped from her ovi, disabled her pheromones or even died
 		to_chat(src, span_xenowarning("Our pheromones wane. The Queen is no longer granting us her pheromones."))
 	else
 		leader_current_aura = SSaura.add_emitter(src, Q.current_aura.aura_types.Copy(), Q.current_aura.range, Q.current_aura.strength, Q.current_aura.duration, Q.current_aura.faction, Q.current_aura.hive_number)
@@ -534,14 +613,13 @@
 	set desc = "Toggles the health and plasma hud appearing above Xenomorphs."
 	set category = "Alien"
 
-	xeno_mobhud = !xeno_mobhud
+	TOGGLE_BITFIELD(xeno_flags, XENO_MOBHUD)
 	var/datum/atom_hud/H = GLOB.huds[DATA_HUD_XENO_STATUS]
-	if(xeno_mobhud)
+	if(xeno_flags & XENO_MOBHUD)
 		H.add_hud_to(src)
 	else
 		H.remove_hud_from(src)
-	to_chat(src, span_notice("You have [xeno_mobhud ? "enabled" : "disabled"] the Xeno Status HUD."))
-
+	to_chat(src, span_notice("You have [(xeno_flags & XENO_MOBHUD) ? "enabled" : "disabled"] the Xeno Status HUD."))
 
 /mob/living/carbon/xenomorph/proc/recurring_injection(mob/living/carbon/C, datum/reagent/toxin = /datum/reagent/toxin/xeno_neurotoxin, channel_time = XENO_NEURO_CHANNEL_TIME, transfer_amount = XENO_NEURO_AMOUNT_RECURRING, count = 4)
 	if(!C?.can_sting() || !toxin)
@@ -552,10 +630,10 @@
 	to_chat(C, span_danger("You feel a tiny prick."))
 	to_chat(src, span_xenowarning("Our stinger injects our victim with [initial(toxin.name)]!"))
 	playsound(C, 'sound/effects/spray3.ogg', 15, TRUE)
-	playsound(C, "alien_drool", 15, TRUE)
+	playsound(C, SFX_ALIEN_DROOL, 15, TRUE)
 	do
 		face_atom(C)
-		if(IsStaggered())
+		if(has_status_effect(STATUS_EFFECT_STAGGER))
 			return FALSE
 		do_attack_animation(C)
 		C.reagents.add_reagent(toxin, transfer_amount)
@@ -659,16 +737,6 @@
 	get_upgrades(src)
 
 /mob/living/carbon/xenomorph/proc/get_upgrades(mob/living/carbon/xenomorph/user)
-	var/upgrade_price
-	switch(xeno_caste.tier)
-		if(XENO_TIER_ONE)
-			upgrade_price = XENO_UPGRADE_BIOMASS_COST_T1
-		if(XENO_TIER_TWO)
-			upgrade_price = XENO_UPGRADE_BIOMASS_COST_T2
-		if(XENO_TIER_THREE)
-			upgrade_price = XENO_UPGRADE_BIOMASS_COST_T3
-		else
-			upgrade_price = XENO_UPGRADE_BIOMASS_COST_T4
 	var/dat = "<div align='center'>"
 
 	dat += "<hr>Active Upgrade Chambers:"
@@ -682,17 +750,17 @@
 	var/spur_chambers_built = length(user?.hive?.spur_chambers)
 	var/veil_chambers_built = length(user?.hive?.veil_chambers)
 	dat += "<div align='center'>SURVIVAL</div>"
-	dat += "[shell_chambers_built ? "<br><a href='?src=[text_ref(src)];carapace_buy=1'>Carapace</a> " : "<br>Carapace "] | Cost: [upgrade_price] | Increase our armor."
-	dat += "[shell_chambers_built ? "<br><a href='?src=[text_ref(src)];regeneration_buy=1'>Regeneration</a> " : "<br>Regeneration "] | Cost: [upgrade_price] | Increase our health regeneration."
-	dat += "[shell_chambers_built ? "<br><a href='?src=[text_ref(src)];vampirism_buy=1'>Vampirism</a> " : "<br>Vampirism "] | Cost: [upgrade_price] | Leech from our attacks."
+	dat += "[shell_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];carapace_buy=1'>Carapace</a> " : "<br>Carapace "] | Cost: [XENO_UPGRADE_COST] | Increase our armor."
+	dat += "[shell_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];regeneration_buy=1'>Regeneration</a> " : "<br>Regeneration "] | Cost: [XENO_UPGRADE_COST] | Increase our health regeneration."
+	dat += "[shell_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];vampirism_buy=1'>Vampirism</a> " : "<br>Vampirism "] | Cost: [XENO_UPGRADE_COST] | Leech from our attacks."
 	dat += "<div align='center'>ATTACK</div>"
-	dat += "[spur_chambers_built ? "<br><a href='?src=[text_ref(src)];celerity_buy=1'>Celerity</a> " : "<br>Celerity "] | Cost: [upgrade_price] | Increase our movement speed."
-	dat += "[spur_chambers_built ? "<br><a href='?src=[text_ref(src)];adrenalin_buy=1'>Adrenalin</a> " : "<br>Adrenalin "] | Cost: [upgrade_price] | Increase our plasma regeneration."
-	dat += "[spur_chambers_built ? "<br><a href='?src=[text_ref(src)];crush_buy=1'>Crush</a> " : "<br>Crush "] | Cost: [upgrade_price] | Increase our damage to objects."
+	dat += "[spur_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];celerity_buy=1'>Celerity</a> " : "<br>Celerity "] | Cost: [XENO_UPGRADE_COST] | Increase our movement speed."
+	dat += "[spur_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];adrenalin_buy=1'>Adrenalin</a> " : "<br>Adrenalin "] | Cost: [XENO_UPGRADE_COST] | Increase our plasma regeneration."
+	dat += "[spur_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];crush_buy=1'>Crush</a> " : "<br>Crush "] | Cost: [XENO_UPGRADE_COST] | Increase our damage to objects."
 	dat += "<div align='center'>UTILITY</div>"
-	dat += "[veil_chambers_built ? "<br><a href='?src=[text_ref(src)];toxin_buy=1'>Toxin</a> " : "<br>Toxin "] | Cost: [upgrade_price] | Inject neurotoxin into the target."
-	dat += "[veil_chambers_built ? "<br><a href='?src=[text_ref(src)];phero_buy=1'>Pheromones</a> " : "<br>Pheromones "] | Cost: [upgrade_price] | Ability to emit pheromones."
-	dat += "[veil_chambers_built ? "<br><a href='?src=[text_ref(src)];trail_buy=1'>Trail</a> " : "<br>Trail "] | Cost: [upgrade_price] | Leave a trail behind."
+	dat += "[veil_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];toxin_buy=1'>Toxin</a> " : "<br>Toxin "] | Cost: [XENO_UPGRADE_COST] | Inject neurotoxin into the target."
+	dat += "[veil_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];phero_buy=1'>Pheromones</a> " : "<br>Pheromones "] | Cost: [XENO_UPGRADE_COST] | Ability to emit pheromones."
+	dat += "[veil_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];trail_buy=1'>Trail</a> " : "<br>Trail "] | Cost: [XENO_UPGRADE_COST] | Leave a trail behind."
 
 	var/datum/browser/popup = new(user, "upgrademenu", "<div align='center'>Mutations Menu</div>", 600, 600)
 	popup.set_content(dat)
@@ -702,17 +770,7 @@
 	if(incapacitated(TRUE))
 		to_chat(usr, span_warning("Cant do that right now!"))
 		return
-	var/upgrade_price
-	switch(xeno_caste.tier)
-		if(XENO_TIER_ONE)
-			upgrade_price = XENO_UPGRADE_BIOMASS_COST_T1
-		if(XENO_TIER_TWO)
-			upgrade_price = XENO_UPGRADE_BIOMASS_COST_T2
-		if(XENO_TIER_THREE)
-			upgrade_price = XENO_UPGRADE_BIOMASS_COST_T3
-		else
-			upgrade_price = XENO_UPGRADE_BIOMASS_COST_T4
-	if(biomass < upgrade_price)
+	if(biomass < XENO_UPGRADE_COST)
 		to_chat(usr, span_warning("You dont have enough biomass!"))
 		return
 	var/upgrade = locate(upgrade_to_apply) in status_effects
@@ -720,12 +778,14 @@
 		to_chat(usr, span_xenonotice("Existing mutation chosen. No biomass spent."))
 		DIRECT_OUTPUT(usr, browse(null, "window=["upgrademenu"]"))
 		return
-	biomass -= upgrade_price
+	biomass -= XENO_UPGRADE_COST
 	to_chat(usr, span_xenonotice("Mutation gained."))
 	for(var/datum/status_effect/S AS in upgrades_to_remove)
 		remove_status_effect(S)
+		upgrades_holder.Remove(S.type)
 	do_jitter_animation(500)
 	apply_status_effect(upgrade_to_apply)
+	upgrades_holder.Add(upgrade_to_apply.type)
 	DIRECT_OUTPUT(usr, browse(null, "window=["upgrademenu"]"))
 
 //Special override case. May not call the parent.

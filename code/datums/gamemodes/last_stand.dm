@@ -1,8 +1,8 @@
 /datum/game_mode/last_stand
 	name = "Last Stand"
 	config_tag = "Last Stand"
-	flags_xeno_abilities = ABILITY_LAST_STAND
-	flags_round_type = MODE_XENO_SPAWN_PROTECT
+	xeno_abilities_flags = ABILITY_LAST_STAND
+	round_type_flags = MODE_XENO_SPAWN_PROTECT
 	valid_job_types = list(
 		/datum/job/terragov/command/captain = 1,
 		/datum/job/terragov/command/fieldcommander = 1,
@@ -32,7 +32,8 @@
 	var/last_waves_check
 
 	///the strength of the waves is ultimately multiplied by the number of people
-	var/waves_power = 1
+	var/waves_power = 0.8
+	var/health_factor = 1
 	///time from the beginning of the round when the waves will not spawn
 	var/neutral_time = 5 MINUTES
 	///list of possible wave generators
@@ -70,7 +71,7 @@
 			continue
 		GLOB.latejoin_gateway -= loc
 
-	for(var/atom/nuke in GLOB.last_stand_nukes)
+	for(var/atom/nuke in GLOB.nuclear_bombs)
 		var/turf_targeted = get_turf(nuke)
 		new /obj/effect/ai_node/goal(turf_targeted, null)
 
@@ -110,9 +111,10 @@
 		if(wave.max_time != -1 && wave.max_time < world.time - SSticker.round_start_time)
 			wave_checks++
 			continue
-		wave_spawned = wave.spawn_wave(points)
+		wave_spawned = wave.spawn_wave(points, health_factor)
 
-	waves_power += 0.1
+	waves_power += 0.05
+	health_factor += 0.04
 
 /datum/game_mode/last_stand/check_finished()
 	if(round_finished)
@@ -124,7 +126,7 @@
 	var/list/living_player_list = count_humans_and_xenos(count_flags = COUNT_IGNORE_ALIVE_SSD|COUNT_IGNORE_XENO_SPECIAL_AREA)
 	var/num_humans = living_player_list[1]
 
-	if(!length(GLOB.last_stand_nukes))
+	if(!length(GLOB.nuclear_bombs))
 		message_admins("Round finished: [MODE_INFESTATION_X_MAJOR]") //xenos destroyed the bombs, xeno major victory
 		round_finished = MODE_INFESTATION_X_MAJOR
 		return TRUE

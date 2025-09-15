@@ -63,6 +63,7 @@
 		if(get_dist(source, nearby_illusion) > distance)
 			continue
 		. += nearby_illusion
+
 ///Returns a list of vehicles via get_dist and same z level method, very cheap compared to range()
 /proc/cheap_get_tanks_near(atom/movable/source, distance)
 	. = list()
@@ -81,8 +82,23 @@
 			continue
 		. += nearby_tank
 
+///Returns a list of unmanned vehicles via get_dist and same z level method, very cheap compared to range()
+/proc/cheap_get_unmanned_vehicles_near(atom/movable/source, distance)
+	. = list()
+	var/turf/source_turf = get_turf(source)
+	if(!source_turf)
+		return
+	for(var/obj/vehicle/unmanned/nearby_unmanned_vehicle AS in GLOB.unmanned_vehicles)
+		if(isnull(nearby_unmanned_vehicle))
+			continue
+		if(source_turf.z != nearby_unmanned_vehicle.z)
+			continue
+		if(get_dist(source_turf, nearby_unmanned_vehicle) > distance)
+			continue
+		. += nearby_unmanned_vehicle
+
 ///Returns the nearest target that has the right target flag
-/proc/get_nearest_target(atom/source, distance, target_flags, attacker_faction, attacker_hive)
+/proc/get_nearest_target(atom/source, distance, target_flags, attacker_faction, attacker_hive, need_los = FALSE)
 	if(!source)
 		return
 	var/atom/nearest_target
@@ -95,13 +111,16 @@
 				continue
 			if(HAS_TRAIT(nearby_human, TRAIT_STEALTH))
 				continue
-			if(get_dist(source, nearby_human) < shorter_distance)
-				nearest_target = nearby_human
-				shorter_distance = get_dist(source, nearby_human) //better to recalculate than to save the var
+			if(get_dist(source, nearby_human) >= shorter_distance)
+				continue
+			if(need_los && !line_of_sight(source, nearby_human))
+				continue
+			nearest_target = nearby_human
+			shorter_distance = get_dist(source, nearby_human) //better to recalculate than to save the var
 	if(target_flags & TARGET_XENO)
 		nearby_xeno_list = cheap_get_xenos_near(source, shorter_distance - 1)
 		for(var/mob/nearby_xeno AS in nearby_xeno_list)
-			if(source.issamexenohive(nearby_xeno))
+			if(attacker_hive == nearby_xeno.get_xeno_hivenumber())
 				continue
 			if(nearby_xeno.stat == DEAD || nearby_xeno.alpha <= HUNTER_STEALTH_RUN_ALPHA)
 				continue
@@ -109,32 +128,57 @@
 				continue
 			if(HAS_TRAIT(nearby_xeno, TRAIT_STEALTH))
 				continue
-			if(get_dist(source, nearby_xeno) < shorter_distance)
-				nearest_target = nearby_xeno
-				shorter_distance = get_dist(source, nearby_xeno)
+			if(get_dist(source, nearby_xeno) >= shorter_distance)
+				continue
+			if(need_los && !line_of_sight(source, nearby_xeno))
+				continue
+			nearest_target = nearby_xeno
+			shorter_distance = get_dist(source, nearby_xeno)
 	if(target_flags & TARGET_HUMAN_TURRETS)
-		for(var/atom/nearby_turret AS in GLOB.marine_turrets)
+		for(var/obj/machinery/deployable/mounted/sentry/nearby_turret AS in GLOB.marine_turrets)
 			if(source.z != nearby_turret.z)
 				continue
-			if(!(get_dist(source, nearby_turret) < shorter_distance))
+			if((GLOB.faction_to_iff[attacker_faction] == nearby_turret.iff_signal))
+				continue
+			if(get_dist(source, nearby_turret) >= shorter_distance)
+				continue
+			if(need_los && !line_of_sight(source, nearby_turret))
 				continue
 			nearest_target = nearby_turret
-	if(target_flags & TARGET_UNMANNED_VEHICLE)
-		for(var/atom/nearby_vehicle AS in GLOB.unmanned_vehicles)
-			if(source.z != nearby_vehicle.z)
+			shorter_distance = get_dist(source, nearby_turret)
+	if(target_flags & TARGET_VEHICLE)
+		for(var/obj/vehicle/sealed/nearby_vehicle AS in (cheap_get_tanks_near(source, distance) + cheap_get_mechs_near(source, distance)))
+			if(nearby_vehicle.faction == attacker_faction)
 				continue
 			if(HAS_TRAIT(nearby_vehicle, TRAIT_STEALTH))
 				continue
-			if(!(get_dist(source, nearby_vehicle) < shorter_distance))
+			if(get_dist(source, nearby_vehicle) >= shorter_distance)
+				continue
+			if(need_los && !line_of_sight(source, nearby_vehicle))
 				continue
 			nearest_target = nearby_vehicle
+			shorter_distance = get_dist(source, nearby_vehicle)
+
+	if(target_flags & TARGET_UNMANNED_VEHICLE)
+		for(var/atom/nearby_unmanned AS in cheap_get_unmanned_vehicles_near(source, distance))
+			if(get_dist(source, nearby_unmanned) >= shorter_distance)
+				continue
+			if(need_los && !line_of_sight(source, nearby_unmanned))
+				continue
+			nearest_target = nearby_unmanned
+			shorter_distance = get_dist(source, nearby_unmanned)
+
 	if(target_flags & TARGET_NUKE) //for last stand
-		for(var/atom/nearby_nuke AS in GLOB.last_stand_nukes)
+		for(var/atom/nearby_nuke AS in GLOB.nuclear_bombs)
 			if(source.z != nearby_nuke.z)
 				continue
-			if(!(get_dist(source, nearby_nuke) < shorter_distance))
+			if(get_dist(source, nearby_nuke) >= shorter_distance)
+				continue
+			if(need_los && !line_of_sight(source, nearby_nuke))
 				continue
 			nearest_target = nearby_nuke
+			shorter_distance = get_dist(source, nearby_nuke)
+
 	if(target_flags & TARGET_FRIENDLY_XENO)
 		if(!nearby_xeno_list)
 			nearby_xeno_list = cheap_get_xenos_near(source, shorter_distance - 1)
@@ -147,9 +191,28 @@
 				continue
 			if(nearby_xeno.stat == DEAD)
 				continue
-			if(get_dist(source, nearby_xeno) < shorter_distance)
-				nearest_target = nearby_xeno
-				shorter_distance = get_dist(source, nearby_xeno)
+			if(get_dist(source, nearby_xeno) >= shorter_distance)
+				continue
+			if(need_los && !line_of_sight(source, nearby_xeno))
+				continue
+			nearest_target = nearby_xeno
+			shorter_distance = get_dist(source, nearby_xeno)
+	if(target_flags & TARGET_FRIENDLY_MOB)
+		for(var/mob/living/nearby_mob AS in cheap_get_living_near(source, distance))
+			if(nearby_mob.stat == DEAD)
+				continue
+			if(nearby_mob.faction != attacker_faction)
+				continue
+			if(!nearby_mob.client) //todo: this might not actually be desirable. Useful for escort atm, but bad for npc on npc teamwork/healing etc
+				continue
+			if(nearby_mob.alpha <= SCOUT_CLOAK_RUN_ALPHA)
+				continue
+			if(get_dist(source, nearby_mob) >= shorter_distance)
+				continue
+			if(need_los && !line_of_sight(source, nearby_mob))
+				continue
+			nearest_target = nearby_mob
+			shorter_distance = get_dist(source, nearby_mob) //better to recalculate than to save the var
 	return nearest_target
 
 /**

@@ -7,9 +7,8 @@
 	effects_icon = 'icons/Xeno/castes/predalien/praetorian_effects.dmi'
 	wall_smash = TRUE
 	pixel_x = -16
-	old_x = -16
 	bubble_icon = "alienroyal"
-	talk_sound = "predalien_talk"
+	talk_sound = SFX_PREDALIEN_TALK
 	mob_size = MOB_SIZE_BIG
 
 	tier = XENO_TIER_FOUR
@@ -22,8 +21,7 @@
 		/datum/xenomorph_skin/predalien,
 	)
 
-	var/max_bonus_life_kills = 10
-	var/butcher_time = 6 SECONDS
+	max_bonus_life_kills = 10
 
 /mob/living/carbon/xenomorph/predalien/Initialize(mapload, mob/living/carbon/xenomorph/oldxeno, h_number)
 	. = ..()
@@ -43,12 +41,30 @@
 		return FALSE
 
 	to_chat(src, {"
-<span class='role_body'>|______________________|</span>
-<span class='role_header'>You are a predator-alien hybrid!</span>
-<span class='role_body'>You are a very powerful xenomorph creature that was born of a Yautja warrior body.
-You are stronger, faster, and smarter than a regular xenomorph, but you must still listen to the hive ruler.
-You have a degree of freedom to where you can hunt and claim the heads of the hive's enemies, so check your verbs.
-Your health meter will not regenerate normally, so kill and die for the hive!</span>
-<span class='role_body'>|______________________|</span>
-"})
+		<span class='role_body'>|______________________|</span>
+		<span class='role_header'>You are a predator-alien hybrid!</span>
+		<span class='role_body'>You are a very powerful xenomorph creature that was born of a Yautja warrior body.
+		You are stronger, faster, and smarter than a regular xenomorph, but you must still listen to the hive ruler.
+		You have a degree of freedom to where you can hunt and claim the heads of the hive's enemies, so check your verbs.
+		Your health meter will not regenerate normally, so kill and die for the hive!</span>
+		<span class='role_body'>|______________________|</span>
+	"})
 	emote("roar")
+
+/mob/living/carbon/xenomorph/predalien/Corrupted
+	hivenumber = XENO_HIVE_CORRUPTED
+
+/mob/living/carbon/xenomorph/predalien/Alpha
+	hivenumber = XENO_HIVE_ALPHA
+
+/mob/living/carbon/xenomorph/predalien/Beta
+	hivenumber = XENO_HIVE_BETA
+
+/mob/living/carbon/xenomorph/predalien/Zeta
+	hivenumber = XENO_HIVE_ZETA
+
+/mob/living/carbon/xenomorph/predalien/admeme
+	hivenumber = XENO_HIVE_ADMEME
+
+/mob/living/carbon/xenomorph/predalien/Corrupted/fallen
+	hivenumber = XENO_HIVE_FALLEN

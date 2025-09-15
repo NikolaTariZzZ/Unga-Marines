@@ -14,7 +14,7 @@
 		/obj/item/weapon/gun/rifle/type71,
 		/obj/item/weapon/gun/rifle/dmr37,
 		/obj/item/weapon/gun/rifle/br64,
-		/obj/item/weapon/gun/rifle/sniper/antimaterial/sr127,
+		/obj/item/weapon/gun/rifle/sr127,
 		/obj/item/weapon/gun/shotgun/pump/bolt/unscoped,
 		/obj/item/weapon/gun/shotgun/double/martini,
 		/obj/item/weapon/gun/pistol/p14,
@@ -86,7 +86,7 @@
 		/obj/item/weapon/gun/rifle/sniper/svd,
 		/obj/item/weapon/gun/rifle/m412,
 		/obj/item/weapon/gun/rifle/m41a,
-		/obj/item/weapon/gun/rifle/type71/seasonal,
+		/obj/item/weapon/gun/rifle/type71,
 		/obj/item/weapon/gun/rifle/alf_machinecarbine,
 	)
 
@@ -120,7 +120,7 @@
 	name = "Random melee weapons spawner"
 	icon_state = "random_melee"
 	loot = list(
-		/obj/item/weapon/claymore/mercsword/machete,
+		/obj/item/weapon/sword/machete,
 		/obj/item/weapon/combat_knife,
 		/obj/item/attachable/bayonetknife,
 		/obj/item/weapon/baseballbat,

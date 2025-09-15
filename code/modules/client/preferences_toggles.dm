@@ -79,7 +79,11 @@
 	prefs.toggles_sound ^= SOUND_MIDI
 	prefs.save_preferences()
 
-	to_chat(src, span_notice("You will [(prefs.toggles_sound & SOUND_MIDI) ? "now" : "no longer"] hear admin music."))
+	if(prefs.toggles_sound & SOUND_MIDI)
+		to_chat(src, span_notice("You will now hear admin music."))
+	else
+		to_chat(src, span_notice("You will no longer hear admin music."))
+		mob.stop_sound_channel(CHANNEL_MIDI)
 
 /client/verb/toggle_radial_medical()
 	set category = "Preferences"
@@ -147,13 +151,14 @@
 		to_chat(src, span_notice("You will now hear ambient sounds."))
 	else
 		to_chat(src, span_notice("You will no longer hear ambient sounds."))
-		mob.stop_sound_channel(CHANNEL_AMBIENT)
+		mob.stop_sound_channel(CHANNEL_AMBIENCE)
 	usr.client.update_ambience_pref()
 
-/client/verb/toggle_special(role in BE_SPECIAL_FLAGS)
+/client/verb/toggle_special()
 	set category = "Preferences"
 	set name = "Toggle Special Roles"
 
+	var/role = tgui_input_list(usr, "Select a role to toggle", "Toggle Special Roles", BE_SPECIAL_FLAGS)
 	var/role_flag = BE_SPECIAL_FLAGS[role]
 	if(!role_flag)
 		return
@@ -166,7 +171,7 @@
 	set category = "Preferences"
 	set name = "Game Preferences"
 	set desc = "Allows you to access the Setup Character screen. Changes to your character won't take effect until next round, but other changes will."
-	prefs.ShowChoices(usr)
+	prefs.ShowChoices(mob)
 
 GLOBAL_LIST_INIT(ghost_forms, list("Default" = GHOST_DEFAULT_FORM, "Ghost Ian 1" = "ghostian", "Ghost Ian 2" = "ghostian2", "Skeleton" = "skeleghost", "Red" = "ghost_red",\
 							"Black" = "ghost_black", "Blue" = "ghost_blue", "Yellow" = "ghost_yellow", "Green" = "ghost_green", "Pink" = "ghost_pink", \
@@ -272,16 +277,7 @@ GLOBAL_LIST_INIT(ghost_others_options, list(GHOST_OTHERS_SIMPLE, GHOST_OTHERS_DE
 	usr.client.prefs.toggles_sound ^= SOUND_WEATHER
 	prefs.save_preferences()
 
-	to_chat(usr, span_notice("You will [(usr.client.prefs.toggles_sound & SOUND_WEATHER) ? "no longer" : "now"] hear weather."))
-
-/client/verb/toggle_gas_mask_sound()
-	set category = "Preferences.Sound"
-	set name = "Toggle Gas Mask sounds."
-
-	usr.client.prefs.toggles_sound ^= SOUND_GAS_MASK
-	usr.client.prefs.save_preferences()
-
-	to_chat(usr, span_notice("You will [(usr.client.prefs.toggles_sound & SOUND_GAS_MASK) ? "no longer" : "now"] hear gas masks breathy noises."))
+	to_chat(usr, span_notice("You will [(usr.client.prefs.toggles_sound & SOUND_WEATHER) ? "now" : "no longer"] hear weather."))
 
 /client/verb/toggle_round_end_sounds()
 	set category = "Preferences.Sound"

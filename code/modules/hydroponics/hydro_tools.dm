@@ -7,7 +7,7 @@
 /obj/item/tool/analyzer/plant_analyzer
 	name = "plant analyzer"
 	icon_state = "hydro"
-	item_state = "analyzer"
+	worn_icon_state = "analyzer"
 
 // *************************************
 // Nutrient defines for hydroponics
@@ -35,7 +35,6 @@
 
 	if(fertilizer)
 		reagents.add_reagent(fertilizer,10)
-
 
 /obj/item/reagent_containers/glass/fertilizer/ez
 	name = "bottle of E-Z-Nutrient"

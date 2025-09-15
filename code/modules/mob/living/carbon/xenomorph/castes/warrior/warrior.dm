@@ -11,18 +11,13 @@
 	maxHealth = 200
 	plasma_stored = 50
 	pixel_x = -16
-	old_x = -16
 	tier = XENO_TIER_TWO
 	upgrade = XENO_UPGRADE_NORMAL
 	bubble_icon = "alienroyal"
 
-
-// ***************************************
-// *********** Icons
-// ***************************************
 /mob/living/carbon/xenomorph/warrior/handle_special_state()
 	var/datum/action/ability/xeno_action/toggle_agility/agility_action = actions_by_path[/datum/action/ability/xeno_action/toggle_agility]
-	if(agility_action?.ability_active)
+	if(agility_action?.toggled)
 		icon_state = "[xeno_caste.caste_name] Agility"
 		return TRUE
 	return FALSE
@@ -30,43 +25,26 @@
 /mob/living/carbon/xenomorph/warrior/handle_special_wound_states(severity)
 	. = ..()
 	var/datum/action/ability/xeno_action/toggle_agility/agility_action = actions_by_path[/datum/action/ability/xeno_action/toggle_agility]
-	if(agility_action?.ability_active)
+	if(agility_action?.toggled)
 		return "wounded_agility_[severity]"
 
+/mob/living/carbon/xenomorph/warrior/primordial
+	upgrade = XENO_UPGRADE_PRIMO
 
-// ***************************************
-// *********** Mob overrides
-// ***************************************
-/mob/living/carbon/xenomorph/warrior/stop_pulling()
-	if(isliving(pulling) && !isxeno(pulling))
-		var/mob/living/living_target = pulling
-		grab_resist_level = 0 //zero it out
-		living_target.SetStun(0)
-		UnregisterSignal(living_target, COMSIG_LIVING_DO_RESIST)
-	..()
+/mob/living/carbon/xenomorph/warrior/Corrupted
+	hivenumber = XENO_HIVE_CORRUPTED
 
-/mob/living/carbon/xenomorph/warrior/start_pulling(atom/movable/AM, force = move_force, suppress_message = TRUE, lunge = FALSE)
-	if(!check_state())
-		return FALSE
-	var/mob/living/living_target = AM
-	if(isxeno(living_target) && issamexenohive(living_target))
-		return ..()
-	if(lunge && ..())
-		return neck_grab(living_target)
-	. = ..(living_target, force, suppress_message)
+/mob/living/carbon/xenomorph/warrior/Alpha
+	hivenumber = XENO_HIVE_ALPHA
 
-/// Puts the target on an upgraded grab and handles related effects.
-/mob/living/carbon/xenomorph/warrior/proc/neck_grab(mob/living/living_target)
-	GLOB.round_statistics.warrior_grabs++
-	SSblackbox.record_feedback(FEEDBACK_TALLY, "round_statistics", 1, "warrior_grabs")
-	setGrabState(GRAB_NECK)
-	living_target.resistance_flags |= RESTRAINED_NECKGRAB
-	RegisterSignal(living_target, COMSIG_LIVING_DO_RESIST, TYPE_PROC_REF(/atom/movable, resisted_against))
-	living_target.drop_all_held_items()
-	living_target.Paralyze(0.1 SECONDS)
-	living_target.balloon_alert(src, "Grabbed [living_target]")
-	return TRUE
+/mob/living/carbon/xenomorph/warrior/Beta
+	hivenumber = XENO_HIVE_BETA
 
-/mob/living/carbon/xenomorph/warrior/resisted_against(datum/source)
-	var/mob/living/living_target = source
-	living_target.do_resist_grab()
+/mob/living/carbon/xenomorph/warrior/Zeta
+	hivenumber = XENO_HIVE_ZETA
+
+/mob/living/carbon/xenomorph/warrior/admeme
+	hivenumber = XENO_HIVE_ADMEME
+
+/mob/living/carbon/xenomorph/warrior/Corrupted/fallen
+	hivenumber = XENO_HIVE_FALLEN

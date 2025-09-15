@@ -3,8 +3,8 @@
 	desc = "A sickly outcrop from the ground. It seems to ooze a strange chemical that shimmers and warps the ground around it."
 	icon = 'icons/Xeno/2x2building.dmi'
 	icon_state = "evotower"
-	bound_width = 64
-	bound_height = 64
+	pixel_x = -16
+	pixel_y = -16
 	obj_integrity = 600
 	max_integrity = 600
 	xeno_structure_flags = CRITICAL_STRUCTURE|IGNORE_WEED_REMOVAL
@@ -29,8 +29,8 @@
 	desc = "A sickly outcrop from the ground. It seems to allow for more advanced growth of the Xenomorphs."
 	icon = 'icons/Xeno/2x2building.dmi'
 	icon_state = "maturitytower"
-	bound_width = 64
-	bound_height = 64
+	pixel_x = -16
+	pixel_y = -16
 	obj_integrity = 400
 	max_integrity = 400
 	xeno_structure_flags = CRITICAL_STRUCTURE|IGNORE_WEED_REMOVAL
@@ -53,8 +53,6 @@
 	desc = "A resin formation that looks like a small pillar. A faint, weird smell can be perceived from it."
 	icon = 'icons/Xeno/1x1building.dmi'
 	icon_state = "recoverytower"
-	bound_width = 32
-	bound_height = 32
 	obj_integrity = 400
 	max_integrity = 400
 	xeno_structure_flags = CRITICAL_STRUCTURE|IGNORE_WEED_REMOVAL
@@ -70,9 +68,9 @@
 	SSminimaps.add_marker(src, MINIMAP_FLAG_XENO, image('icons/UI_icons/map_blips.dmi', null, "phero", ABOVE_FLOAT_LAYER)) // RU TGMC edit - map blips
 	GLOB.hive_datums[hivenumber].pherotowers += src
 
-//Pheromone towers start off with recovery.
+	//Pheromone towers start off with recovery.
 	current_aura = SSaura.add_emitter(src, AURA_XENO_RECOVERY, aura_radius, aura_strength, -1, FACTION_XENO, hivenumber)
-	playsound(src, "alien_drool", 25)
+	playsound(src, SFX_ALIEN_DROOL, 25)
 	update_icon()
 
 /obj/structure/xeno/pherotower/ex_act(severity)
@@ -80,6 +78,7 @@
 
 /obj/structure/xeno/pherotower/Destroy()
 	GLOB.hive_datums[hivenumber].pherotowers -= src
+	QDEL_NULL(current_aura)
 	return ..()
 
 // Clicking on the tower brings up a radial menu that allows you to select the type of pheromone that this tower will emit.
@@ -92,7 +91,7 @@
 	QDEL_NULL(current_aura)
 	current_aura = SSaura.add_emitter(src, phero_choice, aura_radius, aura_strength, -1, FACTION_XENO, hivenumber)
 	balloon_alert(xeno_attacker, "[phero_choice]")
-	playsound(src, "alien_drool", 25)
+	playsound(src, SFX_ALIEN_DROOL, 25)
 	update_icon()
 
 /obj/structure/xeno/pherotower/update_icon_state()
@@ -107,11 +106,3 @@
 		if(AURA_XENO_FRENZY)
 			icon_state = "frenzytower"
 			set_light(2, 2, LIGHT_COLOR_RED)
-
-/obj/structure/xeno/pherotower/crash
-	name = "Recovery tower"
-	resistance_flags = RESIST_ALL
-	xeno_structure_flags = IGNORE_WEED_REMOVAL | CRITICAL_STRUCTURE
-
-/obj/structure/xeno/pherotower/crash/attack_alien(isrightclick = FALSE)
-	return

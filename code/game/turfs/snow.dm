@@ -1,9 +1,7 @@
-//FLOORS-----------------------------------//
-//Snow Floor
 /turf/open/floor/plating/ground/snow
 	name = "snow layer"
 	icon = 'icons/turf/snow2.dmi'
-	icon_state = "snow_0"
+	icon_state = "snow_0_1"
 	hull_floor = TRUE
 	shoefootstep = FOOTSTEP_SNOW
 	barefootstep = FOOTSTEP_SNOW
@@ -15,6 +13,10 @@
 	RegisterSignal(src, COMSIG_ATOM_ACIDSPRAY_ACT, PROC_REF(acidspray_act))
 	update_appearance()
 	update_sides()
+
+/turf/open/floor/plating/ground/snow/change_turf(path, list/new_baseturfs, flags)
+	UnregisterSignal(src, COMSIG_ATOM_ACIDSPRAY_ACT)
+	return ..()
 
 /turf/open/floor/plating/ground/snow/fire_act(burn_level, flame_color)
 	if(!slayer || !burn_level)
@@ -60,6 +62,8 @@
 //PLACING/REMOVING/BUILDING
 /turf/open/floor/plating/ground/snow/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 	//Light Stick
 	if(istype(I, /obj/item/lightstick))
 		var/obj/item/lightstick/L = I
@@ -82,7 +86,6 @@
 		L.set_light(2,1)
 		playsound(user, 'sound/weapons/genhit.ogg', 25, 1)
 
-
 /turf/open/floor/plating/ground/snow/Entered(atom/movable/arrived, atom/old_loc, list/atom/old_locs)
 	if(slayer > 0 && isxeno(arrived))
 		var/mob/living/carbon/xenomorph/xeno = arrived
@@ -91,7 +94,6 @@
 			update_appearance()
 			update_sides()
 	return ..()
-
 
 /turf/open/floor/plating/ground/snow/update_name(updates)
 	. = ..()
@@ -195,20 +197,18 @@
 
 //SNOW LAYERS-----------------------------------//
 /turf/open/floor/plating/ground/snow/layer0
-	icon_state = "snow_0"
+	icon_state = "snow_0_1"
 	slayer = 0
 	minimap_color = MINIMAP_DIRT
 
 /turf/open/floor/plating/ground/snow/layer1
-	icon_state = "snow_1"
+	icon_state = "snow_1_1"
 	slayer = 1
 
 /turf/open/floor/plating/ground/snow/layer2
-	icon_state = "snow_2"
+	icon_state = "snow_2_1"
 	slayer = 2
 
 /turf/open/floor/plating/ground/snow/layer3
-	icon_state = "snow_3"
+	icon_state = "snow_3_1"
 	slayer = 3
-
-

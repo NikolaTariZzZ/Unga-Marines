@@ -12,16 +12,11 @@
 	tier = XENO_TIER_TWO
 	upgrade = XENO_UPGRADE_NORMAL
 	pixel_x = -16 //Needed for 2x2
-	old_x = -16
 	inherent_verbs = list(
 		/mob/living/carbon/xenomorph/proc/vent_crawl,
 	)
-	///Number of huggers the carrier is currently carrying
-	var/huggers = 0
 	///Facehuggers overlay
 	var/mutable_appearance/hugger_overlays_icon
-	///The number of huggers the carrier reserves against observer possession.
-	var/huggers_reserved = 0
 
 // ***************************************
 // *********** Life overrides
@@ -32,7 +27,8 @@
 
 /mob/living/carbon/xenomorph/carrier/get_status_tab_items()
 	. = ..()
-	. += "Reserved Huggers: [huggers_reserved] / [xeno_caste.huggers_max]"
+	. += "Stored Facehuggers: [huggers] / [xeno_caste.huggers_max]"
+	. += "Reserved Facehuggers: [xeno_caste.huggers_reserved] / [xeno_caste.huggers_max]"
 
 /mob/living/carbon/xenomorph/carrier/update_icons()
 	. = ..()
@@ -52,7 +48,7 @@
 		if(stat == DEAD)
 			hugger_overlays_icon.overlays += mutable_appearance(effects_icon, "clinger_[i] Knocked Down")
 		else if(lying_angle)
-			if((resting || IsSleeping()) && (!IsParalyzed() && !IsUnconscious() && health > 0))
+			if((resting || has_status_effect(STATUS_EFFECT_SLEEPING)) && (!has_status_effect(STATUS_EFFECT_PARALYZED) && !has_status_effect(STATUS_EFFECT_UNCONSCIOUS) && health > 0))
 				hugger_overlays_icon.overlays += mutable_appearance(effects_icon, "clinger_[i] Sleeping")
 			else
 				hugger_overlays_icon.overlays += mutable_appearance(effects_icon, "clinger_[i] Knocked Down")
@@ -68,7 +64,7 @@
 	if(stat == DEAD)
 		return FALSE
 
-	if(huggers_reserved >= huggers)
+	if(xeno_caste.huggers_reserved >= huggers)
 		return FALSE
 
 	if(!hive.can_spawn_as_hugger(user))
@@ -97,3 +93,24 @@
 	F.ghostize()
 	F.death(deathmessage = "climb on the carrier", silent = TRUE)
 	qdel(F)
+
+/mob/living/carbon/xenomorph/carrier/primordial
+	upgrade = XENO_UPGRADE_PRIMO
+
+/mob/living/carbon/xenomorph/carrier/Corrupted
+	hivenumber = XENO_HIVE_CORRUPTED
+
+/mob/living/carbon/xenomorph/carrier/Alpha
+	hivenumber = XENO_HIVE_ALPHA
+
+/mob/living/carbon/xenomorph/carrier/Beta
+	hivenumber = XENO_HIVE_BETA
+
+/mob/living/carbon/xenomorph/carrier/Zeta
+	hivenumber = XENO_HIVE_ZETA
+
+/mob/living/carbon/xenomorph/carrier/admeme
+	hivenumber = XENO_HIVE_ADMEME
+
+/mob/living/carbon/xenomorph/carrier/Corrupted/fallen
+	hivenumber = XENO_HIVE_FALLEN

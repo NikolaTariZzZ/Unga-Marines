@@ -31,7 +31,7 @@
 	evolution_threshold = 225
 
 	// *** Flags *** //
-	caste_flags = CASTE_EVOLUTION_ALLOWED|CASTE_ACID_BLOOD
+	caste_flags = CASTE_EVOLUTION_ALLOWED
 	can_flags = CASTE_CAN_BE_QUEEN_HEALED|CASTE_CAN_BE_GIVEN_PLASMA|CASTE_CAN_BE_LEADER|CASTE_CAN_HOLD_FACEHUGGERS|CASTE_CAN_HOLD_JELLY
 	caste_traits = list(TRAIT_CAN_VENTCRAWL)
 
@@ -39,7 +39,7 @@
 	soft_armor = list(MELEE = 80, BULLET = 30, LASER = 30, ENERGY = 30, BOMB = 0, BIO = 20, FIRE = 5, ACID = 20)
 
 	// *** Stealth ***
-	stealth_break_threshold = 15
+	stealth_break_threshold = 25
 
 	// *** Minimap Icon *** //
 	minimap_icon = "hunter"

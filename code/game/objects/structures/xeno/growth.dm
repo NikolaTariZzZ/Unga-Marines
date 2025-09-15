@@ -6,7 +6,7 @@
 	opacity = FALSE
 	max_integrity = 5
 	layer = RESIN_STRUCTURE_LAYER
-	hit_sound = "alien_resin_move"
+	hit_sound = SFX_ALIEN_RESIN_MOVE
 	var/growth_time = 300 SECONDS
 	var/structure = "wall"
 
@@ -22,17 +22,17 @@
 	SIGNAL_HANDLER
 	if(!ismob(O) || isxeno(O))
 		return
-	playsound(src, "alien_resin_break", 25)
+	playsound(src, SFX_ALIEN_RESIN_BREAK, 25)
 	deconstruct(TRUE)
 
 /obj/alien/resin/resin_growth/proc/on_growth()
-	playsound(src, "alien_resin_build", 25)
+	playsound(src, SFX_ALIEN_RESIN_BUILD, 25)
 	var/turf/T = get_turf(src)
 	switch(structure)
 		if("wall")
 			var/list/baseturfs = islist(T.baseturfs) ? T.baseturfs : list(T.baseturfs)
 			baseturfs |= T.type
-			T.ChangeTurf(/turf/closed/wall/resin/regenerating, baseturfs)
+			T.change_turf(/turf/closed/wall/resin/regenerating, baseturfs)
 		if("door")
 			new /obj/structure/mineral_door/resin(T)
 	deconstruct(TRUE)

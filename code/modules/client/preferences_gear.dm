@@ -223,9 +223,12 @@ GLOBAL_LIST_INIT(gear_datums, populate_gear_list())
 	display_name = "Kotahi deck"
 	path = /obj/item/toy/deck/kotahi
 	cost = 2
-	slot = SLOT_R_HAND
+	slot = SLOT_IN_BACKPACK
 
-/datum/gear/kotahi
+/datum/gear/cards
+	display_name = "Deck of cards"
+	path = /obj/item/toy/deck
+	cost = 2
 	slot = SLOT_IN_BACKPACK
 
 /datum/gear/pig
@@ -257,3 +260,21 @@ GLOBAL_LIST_INIT(gear_datums, populate_gear_list())
 	path = /obj/item/clothing/glasses/orange
 	cost = 2
 	slot = SLOT_GLASSES
+
+/datum/gear/rosary
+	display_name = "Rosary"
+	path = /obj/item/rosary
+	cost = 1
+	slot = SLOT_R_HAND
+
+/datum/gear/card/ace/hearts
+	display_name = "Old Ace of Hearts card"
+	path = /obj/item/toy/card/ace/hearts
+	cost = 1
+	slot = SLOT_R_HAND
+
+/datum/gear/card/ace/spades
+	display_name = "Old Ace of Spades card"
+	path = /obj/item/toy/card/ace/spades
+	cost = 1
+	slot = SLOT_R_HAND

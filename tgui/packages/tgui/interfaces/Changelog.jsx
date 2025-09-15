@@ -1,10 +1,6 @@
-import { classes } from 'common/react';
 import dateformat from 'dateformat';
 import yaml from 'js-yaml';
 import { Component, Fragment } from 'react';
-
-import { resolveAsset } from '../assets';
-import { useBackend } from '../backend';
 import {
   Box,
   Button,
@@ -13,7 +9,11 @@ import {
   Section,
   Stack,
   Table,
-} from '../components';
+} from 'tgui-core/components';
+import { classes } from 'tgui-core/react';
+
+import { resolveAsset } from '../assets';
+import { useBackend } from '../backend';
 import { Window } from '../layouts';
 
 const icons = {
@@ -26,18 +26,15 @@ const icons = {
   expansion: { icon: 'check-circle', color: 'green' },
   experiment: { icon: 'radiation', color: 'yellow' },
   image: { icon: 'image', color: 'green' },
-  imageadd: { icon: 'tg-image-plus', color: 'green' },
-  imagedel: { icon: 'tg-image-minus', color: 'red' },
   qol: { icon: 'hand-holding-heart', color: 'green' },
   refactor: { icon: 'tools', color: 'green' },
   rscadd: { icon: 'check-circle', color: 'green' },
   rscdel: { icon: 'times-circle', color: 'red' },
   server: { icon: 'server', color: 'purple' },
   sound: { icon: 'volume-high', color: 'green' },
-  soundadd: { icon: 'tg-sound-plus', color: 'green' },
-  sounddel: { icon: 'tg-sound-minus', color: 'red' },
   map: { icon: 'map', color: 'green' },
   spellcheck: { icon: 'spell-check', color: 'green' },
+  map: { icon: 'map', color: 'green' },
   tgs: { icon: 'toolbox', color: 'purple' },
   tweak: { icon: 'wrench', color: 'green' },
   unknown: { icon: 'info-circle', color: 'label' },
@@ -142,7 +139,7 @@ export class Changelog extends Component {
         </Stack.Item>
         <Stack.Item>
           <Dropdown
-            displayText={selectedDate}
+            autoScroll={false}
             options={dateChoices}
             onSelected={(value) => {
               const index = dateChoices.indexOf(value);
@@ -158,7 +155,7 @@ export class Changelog extends Component {
               return this.getData(dates[index]);
             }}
             selected={selectedDate}
-            width={'150px'}
+            width="150px"
           />
         </Stack.Item>
         <Stack.Item>

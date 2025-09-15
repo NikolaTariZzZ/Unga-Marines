@@ -111,6 +111,10 @@
 /datum/language_holder/xeno
 	languages = list(/datum/language/xenocommon)
 
+/datum/language_holder/hivemind
+	languages = list(/datum/language/xenocommon)
+	shadow_languages = list(/datum/language/common)
+
 
 /datum/language_holder/universal/New()
 	. = ..()
@@ -146,7 +150,7 @@
 		if(H.selected_default_language == L)
 			body += " - Default"
 		else
-			body += " - <a href='?src=[REF(src)];default_language=[L]'>Set as Default</a>"
+			body += " - <a href='byond://?src=[REF(src)];default_language=[L]'>Set as Default</a>"
 		body += "<br><b>Description:</b> <i>[initial(L.desc)]</i>"
 		body += "<br><br>"
 

@@ -13,6 +13,8 @@
 	resistance_flags = INDESTRUCTIBLE|UNACIDABLE
 	interaction_flags = INTERACT_MACHINE_TGUI
 
+	faction = FACTION_TERRAGOV
+
 	///Whether this computer is activated by the event yet
 	var/active = FALSE
 	///How much supply points you get for completing the terminal
@@ -32,9 +34,6 @@
 	var/printing = FALSE
 	///When we reach max progress and get the points
 	var/printing_complete = FALSE
-	///What faction has launched the intel process
-	var/faction = FACTION_TERRAGOV
-
 
 /obj/machinery/computer/intel_computer/Initialize(mapload)
 	. = ..()
@@ -63,7 +62,7 @@
 		printing_complete = TRUE
 		SSpoints.supply_points[faction] += supply_reward
 		SSpoints.dropship_points += dropship_reward
-		priority_announce("Classified transmission recieved from [get_area(src)]. Bonus delivered as [supply_reward] supply points and [dropship_reward] dropship points.", title = "TGMC Intel Division")
+		priority_announce("Получена секретная передача из [get_area(src)]. Бонус доставлен в виде [supply_reward] очков Карго и [dropship_reward] очков шаттла.", title = "Отдел Разведки UPP", sound = 'sound/AI/bonus_climed.ogg')
 		SSminimaps.remove_marker(src)
 
 /obj/machinery/computer/intel_computer/Destroy()

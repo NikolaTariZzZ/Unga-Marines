@@ -17,8 +17,8 @@ GLOBAL_VAR(common_report) //Contains common part of roundend report
 	var/list/job_points_needed_by_job_type = list()
 
 	var/round_time_fog
-	var/flags_round_type = NONE
-	var/flags_xeno_abilities = NONE
+	var/round_type_flags = NONE
+	var/xeno_abilities_flags = NONE
 
 	///Determines whether rounds with the gamemode will be factored in when it comes to persistency
 	var/allow_persistence_save = TRUE
@@ -35,7 +35,7 @@ GLOBAL_VAR(common_report) //Contains common part of roundend report
 	///The points per faction, assoc list
 	var/list/points_per_faction
 	/// When are the shutters dropping
-	var/shutters_drop_time = 20 MINUTES
+	var/shutters_drop_time = SHUTTERS_DROP_TIME
 	///Time before becoming a zombie when going undefibbable
 	var/zombie_transformation_time = 30 SECONDS
 	/** The time between two rounds of this gamemode. If it's zero, this mode i always votable.
@@ -45,6 +45,10 @@ GLOBAL_VAR(common_report) //Contains common part of roundend report
 	var/time_between_round = 0
 	///What factions are used in this gamemode, typically TGMC and xenos
 	var/list/factions = list(FACTION_TERRAGOV, FACTION_XENO)
+	///Increases the amount of xenos needed to evolve to tier three by the value.
+	var/tier_three_penalty = 0
+	///List of castes we dont want to be evolvable depending on gamemode.
+	var/list/restricted_castes
 
 	var/list/predators = list()
 
@@ -55,7 +59,6 @@ GLOBAL_VAR(common_report) //Contains common part of roundend report
 	var/pred_additional_max = 0
 	var/pred_leader_count = 0 //How many Leader preds are active
 	var/pred_leader_max = 1 //How many Leader preds are permitted. Currently fixed to 1. May add admin verb to adjust this later.
-	var/quickbuild_points_flags = NONE
 
 //Distress call variables.
 	var/list/datum/emergency_call/all_calls = list() //initialized at round start and stores the datums.
@@ -123,7 +126,7 @@ GLOBAL_VAR(common_report) //Contains common part of roundend report
 	create_characters()
 	spawn_characters()
 	transfer_characters()
-	SSpoints.prepare_supply_packs_list()
+	SSpoints.prepare_supply_packs_list(iscrashgamemode(src))
 	SSreqtorio.prepare_assembly_crafts_list()
 	SSpoints.dropship_points = 0
 	SSpoints.supply_points[FACTION_TERRAGOV] = 0
@@ -149,7 +152,7 @@ GLOBAL_VAR(common_report) //Contains common part of roundend report
 		var/datum/db_query/query_round_game_mode = SSdbcore.NewQuery("UPDATE [format_table_name("round")] SET [sql] WHERE id = :roundid", list("roundid" = GLOB.round_id))
 		query_round_game_mode.Execute()
 		qdel(query_round_game_mode)
-	if(flags_round_type & MODE_SILO_RESPAWN)
+	if(round_type_flags & MODE_SILO_RESPAWN)
 		var/datum/hive_status/normal/HN = GLOB.hive_datums[XENO_HIVE_NORMAL]
 		HN.RegisterSignals(SSdcs, list(COMSIG_GLOB_OPEN_TIMED_SHUTTERS_LATE, COMSIG_GLOB_OPEN_SHUTTERS_EARLY), TYPE_PROC_REF(/datum/hive_status/normal, set_siloless_collapse_timer))
 
@@ -277,11 +280,11 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 /datum/game_mode/proc/setup_blockers()
 	set waitfor = FALSE
 
-	if(flags_round_type & MODE_LATE_OPENING_SHUTTER_TIMER)
+	if(round_type_flags & MODE_LATE_OPENING_SHUTTER_TIMER)
 		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(send_global_signal), COMSIG_GLOB_OPEN_TIMED_SHUTTERS_LATE), SSticker.round_start_time + shutters_drop_time)
 			//Called late because there used to be shutters opened earlier. To re-add them just copy the logic.
 
-	if(flags_round_type & MODE_XENO_SPAWN_PROTECT)
+	if(round_type_flags & MODE_XENO_SPAWN_PROTECT)
 		var/turf/T
 		while(length(GLOB.xeno_spawn_protection_locations))
 			T = GLOB.xeno_spawn_protection_locations[length(GLOB.xeno_spawn_protection_locations)]
@@ -296,6 +299,7 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 /datum/game_mode/proc/grant_eord_respawn(datum/dcs, mob/source)
 	SIGNAL_HANDLER
 	add_verb(source, /mob/proc/eord_respawn)
+	add_verb(source, /mob/proc/eord_xeno_respawn)
 
 /datum/game_mode/proc/end_of_round_deathmatch()
 	RegisterSignal(SSdcs, COMSIG_GLOB_MOB_LOGIN, PROC_REF(grant_eord_respawn)) // New mobs can now respawn into EORD
@@ -310,6 +314,7 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 	for(var/i in GLOB.player_list)
 		var/mob/M = i
 		add_verb(M, /mob/proc/eord_respawn)
+		add_verb(M, /mob/proc/eord_xeno_respawn)
 		if(isnewplayer(M))
 			continue
 		if(!(M.client?.prefs?.be_special & BE_DEATHMATCH))
@@ -338,8 +343,7 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 
 		if(isxeno(M))
 			var/mob/living/carbon/xenomorph/X = M
-			X.transfer_to_hive(pick(XENO_HIVE_NORMAL, XENO_HIVE_CORRUPTED, XENO_HIVE_ALPHA, XENO_HIVE_BETA, XENO_HIVE_ZETA))
-			INVOKE_ASYNC(X, TYPE_PROC_REF(/atom/movable, forceMove), picked)
+			do_xeno_eord_respawn(X)
 
 		else if(ishuman(M))
 			var/mob/living/carbon/human/H = M
@@ -400,12 +404,18 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 		parts += "[GLOB.round_statistics.howitzer_shells_fired] howitzer shells were fired."
 	if(GLOB.round_statistics.rocket_shells_fired)
 		parts += "[GLOB.round_statistics.rocket_shells_fired] rocket artillery shells were fired."
+	if(GLOB.round_statistics.obs_fired)
+		parts += "[GLOB.round_statistics.obs_fired] orbital bombardements were fired."
 	if(GLOB.round_statistics.total_human_deaths[FACTION_TERRAGOV])
 		parts += "[GLOB.round_statistics.total_human_deaths[FACTION_TERRAGOV]] people were killed, among which [GLOB.round_statistics.total_human_revives[FACTION_TERRAGOV]] were revived and [GLOB.round_statistics.total_human_respawns] respawned. For a [(GLOB.round_statistics.total_human_revives[FACTION_TERRAGOV] / max(GLOB.round_statistics.total_human_deaths[FACTION_TERRAGOV], 1)) * 100]% revival rate and a [(GLOB.round_statistics.total_human_respawns / max(GLOB.round_statistics.total_human_deaths[FACTION_TERRAGOV], 1)) * 100]% respawn rate."
 	if(SSevacuation.human_escaped)
 		parts += "[SSevacuation.human_escaped] marines manage to evacuate, among [SSevacuation.initial_human_on_ship] that were on ship when xenomorphs arrived."
 	if(GLOB.round_statistics.now_pregnant)
 		parts += "[GLOB.round_statistics.now_pregnant] people infected among which [GLOB.round_statistics.total_larva_burst] burst. For a [(GLOB.round_statistics.total_larva_burst / max(GLOB.round_statistics.now_pregnant, 1)) * 100]% successful delivery rate!"
+	if(GLOB.round_statistics.failed_impregnations)
+		parts += "[GLOB.round_statistics.failed_impregnations] failed impregnations."
+	if(GLOB.round_statistics.larva_surgically_removed)
+		parts += "[GLOB.round_statistics.larva_surgically_removed] larvas surgically removed before burst."
 	if(length(GLOB.round_statistics.workout_counts))
 		for(var/faction in GLOB.round_statistics.workout_counts)
 			parts += "The [faction] faction did [GLOB.round_statistics.workout_counts[faction]] workout sets."
@@ -463,16 +473,14 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 		parts += "[GLOB.round_statistics.hunter_silence_targets] number of targets silenced by Hunters."
 	if(GLOB.round_statistics.larva_from_psydrain)
 		parts += "[GLOB.round_statistics.larva_from_psydrain] larvas came from psydrain."
+	if(GLOB.round_statistics.larva_from_cocoon)
+		parts += "[GLOB.round_statistics.larva_from_cocoon] larvas came from cocoons."
 	if(GLOB.round_statistics.larva_from_silo)
 		parts += "[GLOB.round_statistics.larva_from_silo] larvas came from silos."
 	if(GLOB.round_statistics.larva_from_xeno_core)
 		parts += "[GLOB.round_statistics.larva_from_xeno_core] larvas came from infestation towers."
-	if(GLOB.round_statistics.larva_from_cocoon)
-		parts += "[GLOB.round_statistics.larva_from_cocoon] larvas came from cocoons."
 	if(GLOB.round_statistics.larva_from_marine_spawning)
 		parts += "[GLOB.round_statistics.larva_from_marine_spawning] larvas came from marine spawning."
-	if(GLOB.round_statistics.larva_from_siloing_body)
-		parts += "[GLOB.round_statistics.larva_from_siloing_body] larvas came from siloing bodies."
 	if(GLOB.round_statistics.psy_crushes)
 		parts += "[GLOB.round_statistics.psy_crushes] number of times Warlocks used Psychic Crush."
 	if(GLOB.round_statistics.psy_blasts)
@@ -491,21 +499,30 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 		parts += "[GLOB.round_statistics.points_from_research] requisitions points gained from research."
 	if(GLOB.round_statistics.points_from_xenos)
 		parts += "[GLOB.round_statistics.points_from_xenos] requisitions points gained from xenomorph sales."
+	if(GLOB.round_statistics.psypoints_from_psydrain)
+		parts += "[GLOB.round_statistics.psypoints_from_psydrain] psy points gained from psydrain."
+	if(GLOB.round_statistics.psypoints_from_cocoon)
+		parts += "[GLOB.round_statistics.psypoints_from_cocoon] psy points gained from cocoons."
+	if(GLOB.round_statistics.psypoints_from_burst)
+		parts += "[GLOB.round_statistics.psypoints_from_burst] psy points gained from larva bursting on the nest."
+	if(GLOB.round_statistics.psypoints_from_hivemind)
+		parts += "[GLOB.round_statistics.psypoints_from_hivemind] psy points gained from Hivemind's psy gain."
+	if(GLOB.round_statistics.psypoints_from_generator)
+		parts += "[GLOB.round_statistics.psypoints_from_generator] psy points gained from corrupted geothermal generators."
+	if(GLOB.round_statistics.runner_items_stolen)
+		parts += "[GLOB.round_statistics.runner_items_stolen] items stolen by runners."
 
 	if(length(GLOB.round_statistics.req_items_produced))
+		parts += ""  // make it special from other stats above
 		parts += "Requisitions produced: "
 		for(var/atom/movable/path AS in GLOB.round_statistics.req_items_produced)
-			parts += "[GLOB.round_statistics.req_items_produced[path]] [initial(path.name)]"
-			if(path == GLOB.round_statistics.req_items_produced[length(GLOB.round_statistics.req_items_produced)]) //last element
-				parts += "."
-			else
-				parts += ","
+			var/last = GLOB.round_statistics.req_items_produced[length(GLOB.round_statistics.req_items_produced)]
+			parts += "[GLOB.round_statistics.req_items_produced[path]] [initial(path.name)][last ? "." : ","]"
 
 	if(length(parts))
 		return "<div class='panel stationborder'>[parts.Join("<br>")]</div>"
 	else
 		return ""
-
 
 /datum/game_mode/proc/count_humans_and_xenos(list/z_levels = SSmapping.levels_by_any_trait(list(ZTRAIT_MARINE_MAIN_SHIP, ZTRAIT_GROUND, ZTRAIT_RESERVED)), count_flags)
 	var/num_humans = 0
@@ -524,6 +541,8 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 			if(H.status_flags & XENO_HOST)
 				continue
 			if(H.faction == FACTION_XENO)
+				continue
+			if(H.faction == FACTION_ZOMBIE)
 				continue
 			if(isspaceturf(H.loc))
 				continue
@@ -616,13 +635,12 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 	job.on_late_spawn(player.new_character)
 	player.new_character.client?.init_verbs()
 	var/area/A = get_area(player.new_character)
-	deadchat_broadcast(span_game(" has woken at [span_name("[A?.name]")]."), span_game("[span_name("[player.new_character.real_name]")] ([job.title])"), follow_target = player.new_character, message_type = DEADCHAT_ARRIVALRATTLE)
+	deadchat_broadcast(span_game("has woken at [span_name("[A?.name]")]."), span_game("[span_name("[player.new_character.real_name]")] ([job.title])"), follow_target = player.new_character, message_type = DEADCHAT_ARRIVALRATTLE)
 	qdel(player)
 
 /datum/game_mode/proc/attempt_to_join_as_larva(mob/xeno_candidate)
 	to_chat(xeno_candidate, span_warning("This is unavailable in this gamemode."))
 	return FALSE
-
 
 /datum/game_mode/proc/spawn_larva(mob/xeno_candidate)
 	to_chat(xeno_candidate, span_warning("This is unavailable in this gamemode."))
@@ -817,7 +835,7 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 	var/datum/action/report/R = new
 	C.player_details.player_actions += R
 	R.give_action(C.mob)
-	to_chat(C,"<span class='infoplain'><a href='?src=[REF(R)];report=1'>Show roundend report again</a></span>")
+	to_chat(C,"<span class='infoplain'><a href='byond://?src=[REF(R)];report=1'>Show roundend report again</a></span>")
 
 /datum/action/report
 	name = "Show roundend report"
@@ -989,7 +1007,7 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 
 /// Displays your position in the larva queue and how many burrowed larva there are, if applicable
 /datum/game_mode/proc/handle_larva_timer(datum/dcs, mob/source, list/items)
-	if(!(flags_round_type & MODE_INFESTATION))
+	if(!(round_type_flags & MODE_INFESTATION))
 		return
 	var/larva_position = SEND_SIGNAL(source.client, COMSIG_CLIENT_GET_LARVA_QUEUE_POSITION)
 	if (larva_position) // If non-zero, we're in queue
@@ -1008,6 +1026,10 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 			items += "Xeno respawn timer: READY"
 		else
 			items += "Xeno respawn timer: [(status_value / 60) % 60]:[add_leading(num2text(status_value % 60), 2, "0")]"
+
+/// Adjusts the inputted jobworth list.
+/datum/game_mode/proc/get_adjusted_jobworth_list(list/jobworth_list)
+	return jobworth_list
 
 /// called to check for updates that might require starting/stopping the siloless collapse timer
 /datum/game_mode/proc/update_silo_death_timer(datum/hive_status/silo_owner)
@@ -1029,7 +1051,7 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 	var/new_pred_max = min(max(round(length(GLOB.clients) * PREDATOR_TO_TOTAL_SPAWN_RATIO), 1), 4)
 	PJ.total_positions = new_pred_max
 	PJ.max_positions = new_pred_max
-	flags_round_type |= MODE_PREDATOR
+	round_type_flags |= MODE_PREDATOR
 
 /datum/game_mode/proc/initialize_predator(mob/living/carbon/human/new_predator, client/player, ignore_pred_num = FALSE)
 	predators[lowertext(player.ckey)] = list("Name" = new_predator.real_name, "Status" = "Alive")
@@ -1076,7 +1098,7 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 
 	if(show_warning && alert(pred_candidate, "Confirm joining the hunt. You will join as \a [lowertext(job.get_whitelist_status(GLOB.roles_whitelist, pred_candidate.client))] predator", "Confirm", "Yes", "No") != "Yes")
 		return
-
+	#ifndef TESTING
 	if(!(GLOB.roles_whitelist[pred_candidate.ckey] & WHITELIST_PREDATOR))
 		if(show_warning)
 			to_chat(pred_candidate, span_warning("You are not whitelisted! You may apply on the forums to be whitelisted as a predator."))
@@ -1087,7 +1109,7 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 			to_chat(pred_candidate, span_warning("You are banned."))
 		return
 
-	if(!(flags_round_type & MODE_PREDATOR))
+	if(!(round_type_flags & MODE_PREDATOR))
 		if(show_warning)
 			to_chat(pred_candidate, span_warning("There is no Hunt this round! Maybe the next one."))
 		return
@@ -1103,7 +1125,7 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 			if(show_warning)
 				to_chat(pred_candidate, span_warning("Only [pred_max] predators may spawn this round, but Councillors and Ancients do not count."))
 			return
-
+	#endif
 	return TRUE
 
 #undef calculate_pred_max
@@ -1118,3 +1140,9 @@ GLOBAL_LIST_INIT(bioscan_locations, list(
 	new_predator.apply_assigned_role_to_spawn(job)
 	job.after_spawn(new_predator)
 	qdel(pred_candidate)
+
+/datum/game_mode/proc/start_hunt()
+	return
+
+/datum/game_mode/proc/can_hunt()
+	return FALSE

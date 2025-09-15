@@ -1,8 +1,3 @@
-// the types of priority announcements
-#define ANNOUNCEMENT_REGULAR 1
-#define ANNOUNCEMENT_PRIORITY 2
-#define ANNOUNCEMENT_COMMAND 3
-
 // Do not use these macros outside of here (unless you absolutely have to or something), this is mainly to make sure they appear consistent
 // The best way to use these for to_chats or something would be assemble_alert()
 
@@ -35,7 +30,6 @@
 /proc/assemble_alert(title, subtitle, message, color_override, minor = FALSE)
 	if(!title || !message)
 		return
-
 	var/list/alert_strings = list()
 	var/header
 	var/finalized_alert
@@ -70,7 +64,7 @@
  */
 /proc/priority_announce(
 	message,
-	title = "Announcement",
+	title = "Оповещение",
 	subtitle = "",
 	type = ANNOUNCEMENT_REGULAR,
 	sound = 'sound/misc/notice2.ogg',
@@ -91,12 +85,12 @@
 			assembly_header = title
 
 		if(ANNOUNCEMENT_PRIORITY)
-			assembly_header = "Priority Announcement"
+			assembly_header = "Приоритетное Оповещение"
 			if(length(title) > 0)
 				assembly_subtitle = title
 
 		if(ANNOUNCEMENT_COMMAND)
-			assembly_header = "Command Announcement"
+			assembly_header = "Оповещение Экипажу"
 
 	if(subtitle && type != ANNOUNCEMENT_PRIORITY)
 		assembly_subtitle = subtitle
@@ -124,8 +118,8 @@
 			if(playing_sound)
 				SEND_SOUND(M, s)
 
-
-/proc/print_command_report(papermessage, papertitle = "paper", announcemessage = "A report has been downloaded and printed out at all communications consoles.", announcetitle = "Incoming Classified Message", announce = TRUE)
+///Spawns a paper at each communications printer
+/proc/print_command_report(papermessage, papertitle = "paper", announcemessage = "Отчет был загружен и распечатан на всех консолях связи.", announcetitle = "Входящее зашифрованное сообщение", announce = TRUE)
 	if(announce)
 		priority_announce(announcemessage, announcetitle, sound = 'sound/AI/commandreport.ogg')
 
@@ -138,6 +132,34 @@
 		P.info = papermessage
 		P.update_icon()
 
+/// Sends an announcement about the level changing to players. Uses the passed in datum and the subsystem's previous security level to generate the message.
+/proc/level_announce(datum/security_level/selected_level, previous_level_number)
+	var/current_level_number = selected_level.number_level
+	var/current_level_name = selected_level.name
+	var/current_level_color = selected_level.announcement_color
+
+	var/active_subtitle
+	var/active_message
+	var/active_sound
+
+	if(current_level_number > previous_level_number)
+		active_subtitle = "Security level elevated to [uppertext(current_level_name)]:"
+		active_message = selected_level.elevating_body
+		active_sound = selected_level.elevating_sound
+	else
+		active_subtitle = "Security level lowered to [uppertext(current_level_name)]:"
+		active_message = selected_level.lowering_body
+		active_sound = selected_level.lowering_sound
+
+	priority_announce(
+		type = ANNOUNCEMENT_REGULAR,
+		title = "Attention!",
+		subtitle = active_subtitle,
+		message = active_message,
+		sound = active_sound,
+		color_override = current_level_color
+	)
+
 /**
  * Make a minor announcement to a target
  *
@@ -147,7 +169,7 @@
  * * alert - optional, alert or notice?
  * * receivers - a list of all players to send the message to
  */
-/proc/minor_announce(message, title = "Attention:", alert, list/receivers = GLOB.alive_human_list)
+/proc/minor_announce(message, title = "Внимание:", alert, list/receivers = GLOB.alive_human_list)
 	if(!message)
 		return
 

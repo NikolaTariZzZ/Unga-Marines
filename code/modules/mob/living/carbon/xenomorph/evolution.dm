@@ -50,7 +50,9 @@
 /mob/living/carbon/xenomorph/proc/get_evolution_options()
 	. = list()
 	if(HAS_TRAIT(src, TRAIT_STRAIN_SWAP))
-		return xeno_caste.get_strain_options()
+		var/list/all_strains = get_strain_options(xeno_caste.type)
+		all_strains -= get_base_caste_type(xeno_caste.type)
+		return all_strains
 	if(HAS_TRAIT(src, TRAIT_CASTE_SWAP))
 		switch(tier)
 			if(XENO_TIER_ZERO, XENO_TIER_FOUR)
@@ -128,12 +130,16 @@
 	if(HAS_TRAIT(src, TRAIT_CASTE_SWAP))
 		GLOB.key_to_time_of_caste_swap[key] = world.time
 
+	var/keep_evolution_stored = FALSE
+	if(HAS_TRAIT(src, TRAIT_CASTE_SWAP) || HAS_TRAIT(src, TRAIT_STRAIN_SWAP))
+		keep_evolution_stored = TRUE
+
 	SStgui.close_user_uis(src) //Force close all UIs upon evolution.
-	finish_evolve(new_mob_type)
+	finish_evolve(new_mob_type, keep_evolution_stored)
 
 ///Actually changes the xenomorph to another caste
-/mob/living/carbon/xenomorph/proc/finish_evolve(new_mob_type)
-	var/mob/living/carbon/xenomorph/new_xeno = new new_mob_type(get_turf(src))
+/mob/living/carbon/xenomorph/proc/finish_evolve(new_mob_type, keep_evolution_stored = FALSE)
+	var/mob/living/carbon/xenomorph/new_xeno = new new_mob_type(get_turf(src), TRUE)
 
 	if(!istype(new_xeno))
 		//Something went horribly wrong!
@@ -148,7 +154,6 @@
 			return
 
 	SEND_SIGNAL(src, COMSIG_XENOMORPH_EVOLVED, new_xeno)
-
 	for(var/obj/item/W in contents) //Drop stuff
 		dropItemToGround(W)
 
@@ -168,20 +173,28 @@
 		qdel(new_xeno.hunter_data)
 		new_xeno.hunter_data = hunter_data
 		hunter_data = null
+	new_xeno.upgrades_holder = upgrades_holder
+	for(var/datum/status_effect/S AS in new_xeno.upgrades_holder)
+		new_xeno.apply_status_effect(S)
+	new_xeno.generate_name() // This is specifically for numbered xenos who want to keep their previous number instead of a random new one.
+	new_xeno.hive?.update_ruler() // Since ruler wasn't set during initialization, update ruler now. // Is this needed?
 	transfer_observers_to(new_xeno)
 
-	if(new_xeno.health - getBruteLoss(src) - getFireLoss(src) > 0) //Cmon, don't kill the new one! Shouldnt be possible though
+	if(new_xeno.health - get_brute_loss(src) - get_fire_loss(src) > 0) //Cmon, don't kill the new one! Shouldnt be possible though
 		new_xeno.bruteloss = bruteloss //Transfers the damage over.
 		new_xeno.fireloss = fireloss //Transfers the damage over.
-		new_xeno.updatehealth()
+		new_xeno.update_health()
 
-	if(xeno_mobhud)
+	if(xeno_flags & XENO_MOBHUD)
 		var/datum/atom_hud/H = GLOB.huds[DATA_HUD_XENO_STATUS]
 		H.add_hud_to(new_xeno) //keep our mobhud choice
-		new_xeno.xeno_mobhud = TRUE
+		ENABLE_BITFIELD(new_xeno.xeno_flags, XENO_MOBHUD)
 
 	if(lighting_alpha != new_xeno.lighting_alpha)
 		new_xeno.toggle_nightvision(lighting_alpha)
+
+	if(keep_evolution_stored) // don't screw yourself over for using the feature
+		new_xeno.evolution_stored = evolution_stored
 
 	new_xeno.update_spits() //Update spits to new/better ones
 
@@ -191,12 +204,12 @@
 	SEND_SIGNAL(hive, COMSIG_XENOMORPH_POSTEVOLVING, new_xeno)
 	// Update the turf just in case they moved, somehow.
 	var/turf/T = get_turf(src)
-	deadchat_broadcast(" has evolved into a <b>[new_xeno.xeno_caste.caste_name]</b> at <b>[get_area_name(T)]</b>.", "<b>[src]</b>", follow_target = new_xeno, turf_target = T)
+	deadchat_broadcast("has evolved into a <b>[new_xeno.xeno_caste.caste_name]</b> at <b>[get_area_name(T)]</b>.", "<b>[src]</b>", follow_target = new_xeno, turf_target = T)
 
 	GLOB.round_statistics.total_xenos_created-- //so an evolved xeno doesn't count as two.
 	SSblackbox.record_feedback(FEEDBACK_TALLY, "round_statistics", -1, "total_xenos_created")
 
-	if(queen_chosen_lead && (new_xeno.xeno_caste.can_flags & CASTE_CAN_BE_LEADER)) // xeno leader is removed by Destroy()
+	if(xeno_flags & XENO_LEADER && new_xeno.xeno_caste.can_flags & CASTE_CAN_BE_LEADER) // xeno leader is removed by Destroy()
 		hive.add_leader(new_xeno)
 		new_xeno.hud_set_queen_overwatch()
 		if(hive.living_xeno_queen)
@@ -221,7 +234,6 @@
 	selector?.set_selected_zone(zone_selected, new_xeno)
 	qdel(src)
 	INVOKE_ASYNC(new_xeno, TYPE_PROC_REF(/atom, do_jitter_animation), 1000)
-	new_xeno.overlay_fullscreen_timer(2 SECONDS, 20, "roundstart2", /atom/movable/screen/fullscreen/spawning_in)
 
 ///Check if the xeno is currently able to evolve
 /mob/living/carbon/xenomorph/proc/generic_evolution_checks()
@@ -267,7 +279,7 @@
 		balloon_alert(src, "We must be at full plasma to evolve")
 		return FALSE
 
-	if (agility || fortify || crest_defense || status_flags & INCORPOREAL)
+	if(xeno_flags & XENO_AGILITY || fortify || crest_defense || status_flags & INCORPOREAL)
 		balloon_alert(src, "We cannot evolve while in this stance")
 		return FALSE
 
@@ -285,6 +297,10 @@
 /mob/living/carbon/xenomorph/proc/caste_evolution_checks(new_mob_type, regression = FALSE)
 	if(!regression && !(new_mob_type in get_evolution_options()))
 		balloon_alert(src, "We can't evolve to that caste from our current one")
+		return FALSE
+
+	if(new_mob_type in SSticker.mode.restricted_castes)
+		balloon_alert(src, "Our weak hive can't support that caste!")
 		return FALSE
 
 	var/no_room_tier_two = length(hive.xenos_by_tier[XENO_TIER_TWO]) >= hive.tier2_xeno_limit
@@ -314,8 +330,11 @@
 		if(death_timer)
 			to_chat(src, span_warning("The hivemind is still recovering from the last [initial(new_caste.display_name)]'s death. We must wait [DisplayTimeText(timeleft(death_timer))] before we can evolve."))
 			return FALSE
+
 	var/maximum_active_caste = new_caste.maximum_active_caste
-	if(maximum_active_caste != INFINITY && maximum_active_caste <= length(hive.xenos_by_typepath[new_mob_type]))
+	var/list/xenos = hive.get_all_caste_members(new_caste.type) - src // ignores outselves
+	var/active_caste = length(xenos)
+	if(maximum_active_caste != INFINITY && maximum_active_caste <= active_caste)
 		to_chat(src, span_warning("There is already a [initial(new_caste.display_name)] in the hive. We must wait for it to die."))
 		return FALSE
 	var/turf/T = get_turf(src)

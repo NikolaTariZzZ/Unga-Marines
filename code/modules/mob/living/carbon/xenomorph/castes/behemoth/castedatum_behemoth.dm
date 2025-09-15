@@ -23,7 +23,7 @@
 	max_health = 750
 
 	// *** Flags *** //
-	caste_flags = CASTE_EVOLUTION_ALLOWED|CASTE_IS_STRONG|CASTE_STAGGER_RESISTANT|CASTE_ACID_BLOOD
+	caste_flags = CASTE_EVOLUTION_ALLOWED|CASTE_IS_STRONG|CASTE_STAGGER_RESISTANT
 	can_flags = CASTE_CAN_BE_QUEEN_HEALED|CASTE_CAN_BE_GIVEN_PLASMA|CASTE_CAN_BE_LEADER
 	caste_traits = null
 
@@ -67,3 +67,13 @@
 		/datum/action/ability/activable/xeno/seismic_fracture,
 		/datum/action/ability/xeno_action/primal_wrath,
 	)
+
+/datum/xeno_caste/behemoth/on_caste_applied(mob/xenomorph)
+	. = ..()
+	xenomorph.AddElement(/datum/element/ridable, /datum/component/riding/creature/crusher) // we use the same riding element as crusher
+	xenomorph.RegisterSignal(xenomorph, COMSIG_GRAB_SELF_ATTACK, TYPE_PROC_REF(/mob/living/carbon/xenomorph, grabbed_self_attack))
+
+/datum/xeno_caste/behemoth/on_caste_removed(mob/xenomorph)
+	. = ..()
+	xenomorph.RemoveElement(/datum/element/ridable, /datum/component/riding/creature/crusher)
+	xenomorph.UnregisterSignal(xenomorph, COMSIG_GRAB_SELF_ATTACK)

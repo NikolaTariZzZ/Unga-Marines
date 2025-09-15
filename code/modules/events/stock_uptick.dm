@@ -5,8 +5,6 @@
 	earliest_start = 30 MINUTES
 	max_occurrences = 10
 
-	gamemode_blacklist = list("Crash","Combat Patrol","Sensor Capture")
-
 /datum/round_event_control/stock_uptick/can_spawn_event(players_amt, gamemode)
 	if(SSpoints.supply_points[FACTION_TERRAGOV] >= 300)
 		return FALSE
@@ -19,4 +17,4 @@
 	if(points_to_be_added > 1250) //cap the max amount of points at 1250
 		points_to_be_added = 1250
 	SSpoints.supply_points[FACTION_TERRAGOV] += points_to_be_added
-	priority_announce("Due to an increase in Nanotrasen quarterly revenues, our supply allotment has increased by [points_to_be_added] points.")
+	priority_announce("В связи с ростом квартальной выручки Nanotrasen наш объем поставок увеличился на [points_to_be_added] очков.", sound = 'sound/AI/supply_increase.ogg')

@@ -48,6 +48,9 @@
 	var/middragtime = 0 //MMB exploit detection
 	var/atom/middragatom //MMB exploit detection
 
+	/// If this client has been fully initialized or not
+	var/fully_created = FALSE
+
 	/// datum wrapper for client view
 	var/datum/view_data/view_size
 
@@ -97,20 +100,23 @@
 	var/keysend_tripped = FALSE
 	///custom movement keys for this client
 	var/list/movement_keys = list()
+	///Are we locking our movement input?
+	var/movement_locked = FALSE
 
 	var/list/parallax_layers
 	var/list/parallax_layers_cached
+	var/atom/movable/screen/parallax_home/parallax_rock
 	var/atom/movable/movingmob
 	var/turf/previous_turf
 	///world.time of when we can state animate()ing parallax again
 	var/dont_animate_parallax
-	///world.time of last parallax update
-	var/last_parallax_shift
-	///ds between parallax updates
-	var/parallax_throttle = 0
 	var/parallax_movedir = 0
 	var/parallax_layers_max = 4
-	var/parallax_animate_timer
+	/// Timers for the area directional animation, one for each layer
+	var/list/parallax_animate_timers
+	/// Do we want to do parallax animations at all?
+	/// Exists to prevent laptop fires
+	var/do_parallax_animations = TRUE
 
 	var/datum/db_query/clan_info
 

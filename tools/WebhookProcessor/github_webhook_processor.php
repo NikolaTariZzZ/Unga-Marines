@@ -43,8 +43,8 @@ $discordWebHooks = array();
 // Only these repositories will announce in game.
 // Any repository that players actually care about.
 $game_announce_whitelist = array(
-	"tgstation",
-	"TerraGov-Marine-Corps",
+	"PMC-Unga-Marines",
+	"Unga-Marines",
 );
 
 // Any repository that matches in this blacklist will not appear on Discord.
@@ -187,7 +187,6 @@ function validate_user($payload) {
 	$res = github_apisend('https://api.github.com/search/issues?q='.$querystring);
 	$res = json_decode($res, TRUE);
 	return $res['total_count'] >= (int)$validation_count;
-
 }
 
 function get_labels($payload){
@@ -197,82 +196,6 @@ function get_labels($payload){
 	foreach((array) $existing_labels as $label)
 		$existing[] = $label['name'];
 	return $existing;
-}
-
-function check_tag_and_replace($payload, $title_tag, $label, &$array_to_add_label_to){
-	$title = $payload['pull_request']['title'];
-	if(stripos($title, $title_tag) !== FALSE){
-		$array_to_add_label_to[] = $label;
-		return true;
-	}
-	return false;
-}
-
-function set_labels($payload, $labels, $remove) {
-	$existing = get_labels($payload);
-	$tags = array();
-
-	$tags = array_merge($labels, $existing);
-	$tags = array_unique($tags);
-	if($remove) {
-		$tags = array_diff($tags, $remove);
-	}
-
-	$final = array();
-	foreach($tags as $t)
-		$final[] = $t;
-
-	$url = $payload['pull_request']['issue_url'] . '/labels';
-	echo github_apisend($url, 'PUT', $final);
-}
-
-//rip bs-12
-function tag_pr($payload, $opened) {
-	//get the mergeable state
-	$url = $payload['pull_request']['url'];
-	$payload['pull_request'] = json_decode(github_apisend($url), TRUE);
-	if($payload['pull_request']['mergeable'] == null) {
-		//STILL not ready. Give it a bit, then try one more time
-		sleep(10);
-		$payload['pull_request'] = json_decode(github_apisend($url), TRUE);
-	}
-
-	$tags = array();
-	$title = $payload['pull_request']['title'];
-	if($opened) {	//you only have one shot on these ones so as to not annoy maintainers
-		$tags = checkchangelog($payload, false);
-
-		if(strpos(strtolower($title), 'refactor') !== FALSE)
-			$tags[] = 'Refactor';
-		if(strpos(strtolower($title), 'revert') !== FALSE)
-			$tags[] = 'Revert';
-		if(strpos(strtolower($title), 'removes') !== FALSE)
-			$tags[] = 'Removal';
-	}
-
-	$remove = array('Test Merge Candidate');
-
-	$mergeable = $payload['pull_request']['mergeable'];
-	if($mergeable === TRUE)	//only look for the false value
-		$remove[] = 'Merge Conflict';
-	else if ($mergeable === FALSE)
-		$tags[] = 'Merge Conflict';
-
-	$treetags = array('_maps' => 'Map Edit', 'tools' => 'Tools', 'SQL' => 'SQL', '.github' => 'GitHub');
-	$addonlytags = array('icons' => 'Sprites', 'sound' => 'Sound', 'config' => 'Config Update', 'code/controllers/configuration/entries' => 'Config Update', 'tgui' => 'UI');
-	foreach($treetags as $tree => $tag)
-		if(has_tree_been_edited($payload, $tree))
-			$tags[] = $tag;
-		else
-			$remove[] = $tag;
-	foreach($addonlytags as $tree => $tag)
-		if(has_tree_been_edited($payload, $tree))
-			$tags[] = $tag;
-
-	check_tag_and_replace($payload, '[dnm]', 'Do Not Merge', $tags);
-	check_tag_and_replace($payload, '[no gbp]', 'GBP: No Update', $tags);
-
-	return array($tags, $remove);
 }
 
 function remove_ready_for_review($payload, $labels = null){
@@ -341,16 +264,12 @@ function handle_pr($payload) {
 	$validated = validate_user($payload);
 	switch ($payload["action"]) {
 		case 'opened':
-			list($labels, $remove) = tag_pr($payload, true);
-			set_labels($payload, $labels, $remove);
 			if($no_changelog)
 				check_dismiss_changelog_review($payload);
 			break;
 		case 'edited':
 			check_dismiss_changelog_review($payload);
 		case 'synchronize':
-			list($labels, $remove) = tag_pr($payload, false);
-			set_labels($payload, $labels, $remove);
 			return;
 		case 'reopened':
 			$action = $payload['action'];
@@ -558,16 +477,6 @@ function create_comment($payload, $comment){
 	github_apisend($payload['pull_request']['comments_url'], 'POST', json_encode(array('body' => $comment)));
 }
 
-//returns the payload issue's labels as a flat array
-function get_pr_labels_array($payload){
-	$url = $payload['pull_request']['issue_url'] . '/labels';
-	$issue = json_decode(github_apisend($url), true);
-	$result = array();
-	foreach($issue as $l)
-		$result[] = $l['name'];
-	return $result;
-}
-
 function is_maintainer($payload, $author){
 	global $maintainer_team_id;
 	$repo_is_org = $payload['pull_request']['base']['repo']['owner']['type'] == 'Organization';
@@ -709,21 +618,14 @@ function checkchangelog($payload, $compile = true) {
 				break;
 			case 'qol':
 				if($item != 'made something easier to use') {
-					$tags[] = 'Quality of Life';
+					$tags[] = 'QoL';
 					$currentchangelogblock[] = array('type' => 'qol', 'body' => $item);
 				}
 				break;
-			case 'soundadd':
-				if($item != 'added a new sound thingy') {
+			case 'sound':
+				if($item != 'added/modified/removed audio or sound effects') {
 					$tags[] = 'Sound';
-					$currentchangelogblock[] = array('type' => 'soundadd', 'body' => $item);
-				}
-				break;
-			case 'sounddel':
-				if($item != 'removed an old sound thingy') {
-					$tags[] = 'Sound';
-					$tags[] = 'Removal';
-					$currentchangelogblock[] = array('type' => 'sounddel', 'body' => $item);
+					$currentchangelogblock[] = array('type' => 'sound', 'body' => $item);
 				}
 				break;
 			case 'add':
@@ -742,17 +644,10 @@ function checkchangelog($payload, $compile = true) {
 					$currentchangelogblock[] = array('type' => 'rscdel', 'body' => $item);
 				}
 				break;
-			case 'imageadd':
+			case 'image':
 				if($item != 'added some icons and images') {
 					$tags[] = 'Sprites';
-					$currentchangelogblock[] = array('type' => 'imageadd', 'body' => $item);
-				}
-				break;
-			case 'imagedel':
-				if($item != 'deleted some icons and images') {
-					$tags[] = 'Sprites';
-					$tags[] = 'Removal';
-					$currentchangelogblock[] = array('type' => 'imagedel', 'body' => $item);
+					$currentchangelogblock[] = array('type' => 'image', 'body' => $item);
 				}
 				break;
 			case 'typo':
@@ -768,6 +663,13 @@ function checkchangelog($payload, $compile = true) {
 					$currentchangelogblock[] = array('type' => 'balance', 'body' => $item);
 				}
 				break;
+			case 'mapping':
+			case 'map':
+				if($item != 'added/modified/removed map content'){
+					$tags[] = 'Mapping';
+					$currentchangelogblock[] = array('type' => 'balance', 'body' => $item);
+				}
+			break;
 			case 'code_imp':
 			case 'code':
 				if($item != 'changed some code'){

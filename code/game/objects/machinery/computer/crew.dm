@@ -3,7 +3,7 @@
 #define DISPLAY_IN_TRANSIT 2
 
 /obj/machinery/computer/crew
-	name = "Crew monitoring computer"
+	name = "crew monitoring computer"
 	desc = "Used to monitor active health sensors built into most of the crew's uniforms."
 	icon_state = "computer"
 	screen_overlay = "crew"
@@ -53,10 +53,10 @@
 
 				crewmemberData["sensor_type"] = C.sensor_mode
 				crewmemberData["status"] = H.stat
-				crewmemberData[OXY] = round(H.getOxyLoss(), 1)
-				crewmemberData[TOX] = round(H.getToxLoss(), 1)
-				crewmemberData[BURN] = round(H.getFireLoss(), 1)
-				crewmemberData[BRUTE] = round(H.getBruteLoss(), 1)
+				crewmemberData[OXY] = round(H.get_oxy_loss(), 1)
+				crewmemberData[TOX] = round(H.get_tox_loss(), 1)
+				crewmemberData[BURN] = round(H.get_fire_loss(), 1)
+				crewmemberData[BRUTE] = round(H.get_brute_loss(), 1)
 
 				crewmemberData["name"] = "Unknown"
 				crewmemberData["rank"] = "Unknown"

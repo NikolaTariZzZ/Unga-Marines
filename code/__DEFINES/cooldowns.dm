@@ -27,6 +27,7 @@
 #define COOLDOWN_RACK_BOLT "rack_bolt"
 #define COOLDOWN_LIGHT "cooldown_light"
 #define COOLDOWN_JETPACK "jetpack"
+#define COOLDOWN_SKILL_ORDERS "skill_orders"
 #define COOLDOWN_CIC_ORDERS "cic_orders"
 #define COOLDOWN_HUD_ORDER "hud_order"
 #define COOLDOWN_CLOAK_IMPLANT "cloak_implant"
@@ -39,6 +40,7 @@
 #define COOLDOWN_LOADOUT_EQUIPPED "cooldown_loadout_equipped"
 #define COOLDOWN_LOADOUT_VISUALIZATION "cooldown_loadout_visualization"
 #define COOLDOWN_TADPOLE_LAUNCHING "cooldown_tadpole_launching"
+#define COOLDOWN_TANGLE_EMITTER "cooldown_tangle_emitter"
 #define COOLDOWN_BOMBVEST_SHIELD_DROP "cooldown_bombvest_shield_drop"
 #define COOLDOWN_HIVEMIND_MANIFESTATION "cooldown_hivemind_manifestation"
 #define COOLDOWN_ORBITAL_SPOTLIGHT "orbital_spotlight"
@@ -55,6 +57,12 @@
 #define COOLDOWN_ARMORED_HORN "cooldown_armored_horn"
 #define COOLDOWN_MOB_EX_ACT "mob_ex_act"
 #define COOLDOWN_MOUNTED_GUN_ROTATE "mounted_gun_rotate"
+#define COOLDOWN_STAMINA "adrenaline_add_stamina"
+#define COOLDOWN_CRIT "adrenaline_heal_crit"
+#define COOLDOWN_WHISTLE_BLOW "cooldown_whistle_blow"
+#define COOLDOWN_WHISTLE_WARCRY "cooldown_whistle_warcry"
+#define COOLDOWN_ARMORED_SMOKE "cooldown_armored_smoke"
+#define COOLDOWN_LOCATE_APC "cooldown_locate_apc"
 
 //Mecha cooldowns
 #define COOLDOWN_MECHA "mecha"

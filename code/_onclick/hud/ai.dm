@@ -1,5 +1,6 @@
 /atom/movable/screen/ai
 	icon = 'icons/mob/screen_ai.dmi'
+	mouse_over_pointer = MOUSE_HAND_POINTER
 
 
 /atom/movable/screen/ai/Click()
@@ -67,6 +68,17 @@
 	var/mob/living/silicon/ai/AI = usr
 	AI.toggle_camera_light()
 
+/atom/movable/screen/ai/supply_interface
+	name = "Supply Interface"
+	icon_state = "pda"
+
+/atom/movable/screen/ai/supply_interface/Click()
+	. = ..()
+	if(.)
+		return
+	var/mob/living/silicon/ai/AI = usr
+	AI.supply_interface()
+
 
 /atom/movable/screen/ai/multicam
 	name = "Multicamera Mode"
@@ -79,7 +91,6 @@
 		return
 	var/mob/living/silicon/ai/AI = usr
 	AI.toggle_multicam()
-
 
 /atom/movable/screen/ai/add_multicam
 	name = "New Camera"
@@ -116,6 +127,11 @@
 //Camera light
 	using = new /atom/movable/screen/ai/camera_light(null, src)
 	using.screen_loc = ui_ai_camera_light
+	static_inventory += using
+
+//Supply Interface
+	using = new /atom/movable/screen/ai/supply_interface(null, src)
+	using.screen_loc = ui_ai_supply
 	static_inventory += using
 
 //Multicamera mode

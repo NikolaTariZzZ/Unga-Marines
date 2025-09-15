@@ -1,4 +1,4 @@
-/mob/living/carbon/Life()
+/mob/living/carbon/Life(seconds_per_tick, times_fired)
 
 	set invisibility = 0
 	set background = 1
@@ -41,9 +41,9 @@
 /mob/living/carbon/human/proc/oncritdrag()
 	SIGNAL_HANDLER
 	if(isxeno(pulledby))
-		if(adjustOxyLoss(HUMAN_CRITDRAG_OXYLOSS)) //take oxy damage per tile dragged
+		if(adjust_oxy_loss(HUMAN_CRITDRAG_OXYLOSS)) //take oxy damage per tile dragged
 			return
-		INVOKE_ASYNC(src, PROC_REF(adjustBruteLoss), HUMAN_CRITDRAG_OXYLOSS)
+		INVOKE_ASYNC(src, PROC_REF(adjust_brute_loss), HUMAN_CRITDRAG_OXYLOSS)
 
 /mob/living/carbon/update_stat()
 	. = ..()
@@ -63,13 +63,31 @@
 		death()
 		return
 
-	if(HAS_TRAIT(src, TRAIT_KNOCKEDOUT) || getOxyLoss() > CARBON_KO_OXYLOSS || health < get_crit_threshold())
+	if(health < get_crit_threshold())
 		if(stat == UNCONSCIOUS)
 			return
 		set_stat(UNCONSCIOUS)
+		on_crit()
+
+	else if(HAS_TRAIT(src, TRAIT_KNOCKEDOUT) || get_oxy_loss() > CARBON_KO_OXYLOSS)
+		if(stat == UNCONSCIOUS)
+			return
+		set_stat(UNCONSCIOUS)
+
 	else if(stat == UNCONSCIOUS)
 		set_stat(CONSCIOUS)
 
+///called just after this mob goes unconscious due to taking too much dmg
+/mob/living/carbon/proc/on_crit()
+	if(!HAS_TRAIT(src, TRAIT_CRIT_IS_DEATH))
+		SEND_GLOBAL_SIGNAL(COMSIG_GLOB_MOB_ON_CRIT, src)
+		return
+	var/damage_dealt = health - get_death_threshold()
+	if(damage_dealt < 1)
+		death()
+		return
+	adjust_oxy_loss(damage_dealt)
+	death()
 
 /mob/living/carbon/handle_status_effects()
 	. = ..()
@@ -81,7 +99,7 @@
 		dizzy(-restingpwr)
 
 	if(drowsyness)
-		adjustDrowsyness(-restingpwr)
+		adjust_drowsyness(-restingpwr)
 		blur_eyes(2)
 		if(drowsyness > 18 && prob(5))
 			Sleeping(2 SECONDS)
@@ -97,7 +115,7 @@
 	if(staminaloss > -max_stamina)
 		handle_staminaloss()
 
-	if(IsSleeping())
+	if(has_status_effect(STATUS_EFFECT_SLEEPING))
 		handle_dreams()
 		if(mind)
 			if((mind.active && client != null) || immune_to_ssd) //This also checks whether a client is connected, if not, sleep is not reduced.
@@ -137,24 +155,24 @@
 			blur_eyes(4)
 
 		if(drunkenness >= 81)
-			adjustToxLoss(0.2)
+			adjust_tox_loss(0.2)
 			if(prob(10) && !stat)
 				to_chat(src, span_warning("Maybe you should lie down for a bit..."))
-				adjustDrowsyness(5)
+				adjust_drowsyness(5)
 
 		if(drunkenness >= 91)
-			adjustBrainLoss(0.2, TRUE)
+			adjust_brain_loss(0.2, TRUE)
 			if(prob(15 && !stat))
 				to_chat(src, span_warning("Just a quick nap..."))
 				Sleeping(80 SECONDS)
 
 		if(drunkenness >=101) //Let's be honest, you should be dead by now
-			adjustToxLoss(4)
+			adjust_tox_loss(4)
 
 	switch(drunkenness) //painkilling effects
-		if(51 to 71)
+		if(6 to 41)
 			reagent_shock_modifier += PAIN_REDUCTION_LIGHT
-		if(71 to 81)
+		if(41 to 81)
 			reagent_shock_modifier += PAIN_REDUCTION_MEDIUM
 		if(81 to INFINITY)
 			reagent_shock_modifier += PAIN_REDUCTION_HEAVY

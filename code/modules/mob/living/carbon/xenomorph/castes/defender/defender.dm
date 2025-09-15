@@ -11,7 +11,6 @@
 	maxHealth = 200
 	plasma_stored = 50
 	pixel_x = -16
-	old_x = -16
 	tier = XENO_TIER_ONE
 	upgrade = XENO_UPGRADE_NORMAL
 	pull_speed = -2
@@ -36,21 +35,54 @@
 		return "wounded_crest_[severity]"
 
 // ***************************************
-// *********** Life overrides
-// ***************************************
-/mob/living/carbon/xenomorph/defender/set_stat()
-	. = ..()
-	if(isnull(.))
-		return
-	if(. == CONSCIOUS && fortify) //No longer conscious.
-		var/datum/action/ability/xeno_action/fortify/FT = actions_by_path[/datum/action/ability/xeno_action/fortify]
-		FT.set_fortify(FALSE) //Fortify prevents dragging due to the anchor component.
-
-
-// ***************************************
 // *********** Mob overrides
 // ***************************************
 
 /mob/living/carbon/xenomorph/defender/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/throw_parry)
+
+// ***************************************
+// *********** Steel crest
+// ***************************************
+
+/mob/living/carbon/xenomorph/defender/steel_crest
+	icon = 'icons/Xeno/castes/defender/steel_crest.dmi'
+	caste_base_type = /datum/xeno_caste/defender/steel_crest
+
+// ***************************************
+// *********** Front Armor
+// ***************************************
+
+/mob/living/carbon/xenomorph/defender/steel_crest/projectile_hit(obj/projectile/proj, cardinal_move, uncrossing)
+	if(SEND_SIGNAL(src, COMSIG_XENO_PROJECTILE_HIT, proj, cardinal_move, uncrossing) & COMPONENT_PROJECTILE_DODGE)
+		return FALSE
+	if(proj.ammo.ammo_behavior_flags & AMMO_SKIPS_ALIENS)
+		return FALSE
+	if((cardinal_move & REVERSE_DIR(dir)))
+		proj.damage -= proj.damage * (0.2 * get_sunder())
+	return ..()
+
+/mob/living/carbon/xenomorph/defender/primordial
+	upgrade = XENO_UPGRADE_PRIMO
+
+/mob/living/carbon/xenomorph/defender/steel_crest/primordial
+	upgrade = XENO_UPGRADE_PRIMO
+
+/mob/living/carbon/xenomorph/defender/Corrupted
+	hivenumber = XENO_HIVE_CORRUPTED
+
+/mob/living/carbon/xenomorph/defender/Alpha
+	hivenumber = XENO_HIVE_ALPHA
+
+/mob/living/carbon/xenomorph/defender/Beta
+	hivenumber = XENO_HIVE_BETA
+
+/mob/living/carbon/xenomorph/defender/Zeta
+	hivenumber = XENO_HIVE_ZETA
+
+/mob/living/carbon/xenomorph/defender/admeme
+	hivenumber = XENO_HIVE_ADMEME
+
+/mob/living/carbon/xenomorph/defender/Corrupted/fallen
+	hivenumber = XENO_HIVE_FALLEN

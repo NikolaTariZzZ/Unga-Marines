@@ -4,7 +4,7 @@
 /obj/machinery/computer/camera_advanced/remote_fob
 	name = "FOB Construction Drone Control"
 	desc = "A computer console equipped with camera screen and controls for a planetside deployed construction drone. Materials or equipment vouchers can be added simply by inserting them into the computer."
-	icon = 'icons/Marine/remotefob.dmi'
+	icon = 'icons/obj/machines/fob.dmi'
 	icon_state = "fobpc"
 	interaction_flags = INTERACT_MACHINE_DEFAULT
 	req_one_access = list(ACCESS_MARINE_REMOTEBUILD, ACCESS_MARINE_CE, ACCESS_MARINE_ENGINEERING, ACCESS_MARINE_LEADER)
@@ -15,18 +15,11 @@
 	var/drone_creation_allowed = TRUE
 	var/obj/docking_port/stationary/marine_dropship/spawn_spot
 	var/datum/action/innate/remote_fob/metal_cade/metal_cade
-	/* ORIGINAL
-	var/metal_remaining = 200
-	var/datum/action/innate/remote_fob/plast_cade/plast_cade
-	var/plasteel_remaining = 100
-	*/
-	//RUTGMC EDIT BEGIN
 	var/datum/action/innate/remote_fob/metal_folding_cade/metal_folding_cade
 	var/metal_remaining = 240
 	var/datum/action/innate/remote_fob/plasteel_cade/plasteel_cade
 	var/datum/action/innate/remote_fob/plast_folding_cade/plast_folding_cade
 	var/plasteel_remaining = 120
-	//RUTGMC EDIT END
 	var/datum/action/innate/remote_fob/toggle_wiring/toggle_wiring //whether or not new barricades will be wired
 	var/do_wiring = TRUE
 	var/datum/action/innate/remote_fob/eject_metal_action/eject_metal_action
@@ -35,14 +28,10 @@
 /obj/machinery/computer/camera_advanced/remote_fob/Initialize(mapload)
 	. = ..()
 	metal_cade = new()
-	//plast_cade = new() //ORIGINAL
-	//RUTGMC EDIT BEGIN
 	metal_folding_cade = new()
 	plasteel_cade = new()
 	plast_folding_cade = new()
-	//RUTGMC EDIT END
 	toggle_wiring = new()
-	/*sentry = new()*/
 	eject_metal_action = new()
 	eject_plasteel_action = new()
 
@@ -59,14 +48,10 @@
 /obj/machinery/computer/camera_advanced/remote_fob/Destroy()
 	spawn_spot = null
 	QDEL_NULL(metal_cade)
-	//QDEL_NULL(plast_cade) //ORIGINAL
-	//RUTGMC EDIT BEGIN
 	QDEL_NULL(metal_folding_cade)
 	QDEL_NULL(plasteel_cade)
 	QDEL_NULL(plast_folding_cade)
-	//RUTGMC EDIT END
 	QDEL_NULL(toggle_wiring)
-	/*QDEL_NULL(sentry)*/
 	QDEL_NULL(eject_metal_action)
 	QDEL_NULL(eject_plasteel_action)
 
@@ -85,7 +70,6 @@
 	icon_state = "fobpc-transfer"
 	user.lighting_alpha = 120
 	eyeobj.name = "Remote Construction Drone"
-	eyeobj.register_facedir_signals(user)
 	if(eyeobj.eye_initialized)
 		eyeobj.setLoc(get_turf(spawn_spot))
 
@@ -95,18 +79,16 @@
 	var/turf/consolespot = get_turf(loc)
 	switch(mattype)
 		if(EJECT_METAL)
-			var/obj/item/stack/sheet/metal/stack = /obj/item/stack/sheet/metal
-			while(metal_remaining>0)
-				stack = new /obj/item/stack/sheet/metal(consolespot)
-				stack.amount = min(metal_remaining, 50)
-				metal_remaining -= stack.amount
+			while(metal_remaining > 0)
+				var/amount = min(metal_remaining, 50)
+				new /obj/item/stack/sheet/metal(consolespot, amount)
+				metal_remaining -= amount
 			return
 		if(EJECT_PLASTEEL)
-			var/obj/item/stack/sheet/plasteel/stack = /obj/item/stack/sheet/plasteel
-			while(plasteel_remaining>0)
-				stack = new /obj/item/stack/sheet/plasteel(consolespot)
-				stack.amount = min(plasteel_remaining, 50)
-				plasteel_remaining -= stack.amount
+			while(plasteel_remaining > 0)
+				var/amount = min(plasteel_remaining, 50)
+				new /obj/item/stack/sheet/plasteel(consolespot, amount)
+				plasteel_remaining -= amount
 
 /obj/machinery/computer/camera_advanced/remote_fob/interact(mob/living/user)
 	if(machine_stat & (NOPOWER|BROKEN))
@@ -120,12 +102,12 @@
 	spawn_spot = FALSE
 	switch(tgui_alert(user, "Summon Drone in:", "FOB Construction Drone Control", list("LZ1","LZ2", "Cancel")))
 		if("LZ1")
-			spawn_spot = locate(/obj/docking_port/stationary/marine_dropship/lz1) in SSshuttle.stationary
+			spawn_spot = locate(/obj/docking_port/stationary/marine_dropship/lz1) in SSshuttle.stationary_docking_ports
 			if(!spawn_spot)
 				to_chat(user, span_warning("No valid location for drone deployment found."))
 				return
 		if("LZ2")
-			spawn_spot = locate(/obj/docking_port/stationary/marine_dropship/lz2) in SSshuttle.stationary
+			spawn_spot = locate(/obj/docking_port/stationary/marine_dropship/lz2) in SSshuttle.stationary_docking_ports
 			if(!spawn_spot)
 				to_chat(user, span_warning("No valid location for drone deployment found."))
 				return
@@ -169,13 +151,6 @@
 		metal_cade.give_action(user)
 		actions += metal_cade
 
-	/* ORIGINAL
-	if(plast_cade)
-		plast_cade.target = src
-		plast_cade.give_action(user)
-		actions += plast_cade
-	*/
-	//RUTGMC ADDON BEGIN
 	if(metal_folding_cade)
 		metal_folding_cade.target = src
 		metal_folding_cade.give_action(user)
@@ -190,7 +165,6 @@
 		plast_folding_cade.target = src
 		plast_folding_cade.give_action(user)
 		actions += plast_folding_cade
-	//RUTGMC ADDON END
 
 	if(toggle_wiring)
 		toggle_wiring.target = src
@@ -215,7 +189,6 @@
 	icon_state = "fobpc"
 	eyeobj.invisibility = INVISIBILITY_ABSTRACT
 	eyeobj.eye_initialized = FALSE
-	eyeobj.unregister_facedir_signals(user)
 	UnregisterSignal(user, COMSIG_MOB_CLICKON)
 	return ..()
 

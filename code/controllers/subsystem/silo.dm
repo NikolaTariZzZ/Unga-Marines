@@ -6,11 +6,9 @@ SUBSYSTEM_DEF(silo)
 	init_order = INIT_ORDER_SPAWNING_POOL
 	///How many larva points are added every minutes in total
 	var/current_larva_spawn_rate = 0
-	///A temporary buff for larva generation, that comes from the monitor system detecting a stalemate
-	var/larva_spawn_rate_temporary_buff = 0
 
 /datum/controller/subsystem/silo/Initialize()
-	RegisterSignals(SSdcs, list(COMSIG_GLOB_OPEN_TIMED_SHUTTERS_LATE, COMSIG_GLOB_OPEN_TIMED_SHUTTERS_XENO_HIVEMIND, COMSIG_GLOB_OPEN_SHUTTERS_EARLY, COMSIG_GLOB_TADPOLE_LAUNCHED), PROC_REF(start_spawning))
+	RegisterSignals(SSdcs, list(COMSIG_GLOB_OPEN_TIMED_SHUTTERS_LATE, COMSIG_GLOB_OPEN_SHUTTERS_EARLY, COMSIG_GLOB_TADPOLE_LANDED_OUT_LZ), PROC_REF(start_spawning))
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/silo/fire(resumed = 0)
@@ -35,8 +33,6 @@ SUBSYSTEM_DEF(silo)
 	var/optimal_human_to_xeno_ratio = xeno_job.job_points_needed / LARVA_POINTS_REGULAR
 	current_larva_spawn_rate *= clamp(round(current_human_to_xeno_ratio / optimal_human_to_xeno_ratio, 0.01), 0.5, 2)
 
-	current_larva_spawn_rate += larva_spawn_rate_temporary_buff
-
 	GLOB.round_statistics.larva_from_silo += current_larva_spawn_rate / xeno_job.job_points_needed
 
 	xeno_job.add_job_points(current_larva_spawn_rate)
@@ -47,6 +43,6 @@ SUBSYSTEM_DEF(silo)
 ///Activate the subsystem when shutters open and remove the free spawning when marines are joining
 /datum/controller/subsystem/silo/proc/start_spawning()
 	SIGNAL_HANDLER
-	UnregisterSignal(SSdcs, list(COMSIG_GLOB_OPEN_TIMED_SHUTTERS_LATE, COMSIG_GLOB_OPEN_TIMED_SHUTTERS_XENO_HIVEMIND, COMSIG_GLOB_OPEN_SHUTTERS_EARLY, COMSIG_GLOB_TADPOLE_LAUNCHED))
-	if(SSticker.mode?.flags_round_type & MODE_SILO_RESPAWN)
+	UnregisterSignal(SSdcs, list(COMSIG_GLOB_OPEN_TIMED_SHUTTERS_LATE, COMSIG_GLOB_OPEN_SHUTTERS_EARLY, COMSIG_GLOB_TADPOLE_LANDED_OUT_LZ))
+	if(SSticker.mode?.round_type_flags & MODE_SILO_RESPAWN)
 		can_fire = TRUE

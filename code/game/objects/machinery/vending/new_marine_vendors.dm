@@ -24,8 +24,6 @@
 
 	var/list/categories
 	var/list/listed_products
-	///The faction of that vendor, can be null
-	var/faction
 
 /obj/machinery/marine_selector/Initialize(mapload)
 	. = ..()
@@ -62,11 +60,11 @@
 			to_chat(user, span_warning("Access denied. Your assigned role doesn't have access to this machinery."))
 			return FALSE
 
-		var/obj/item/card/id/I = H.get_idcard()
-		if(!istype(I)) //not wearing an ID
+		var/obj/item/card/id/user_id = H.get_idcard()
+		if(!istype(user_id)) //not wearing an ID
 			return FALSE
 
-		if(I.registered_name != H.real_name)
+		if(user_id.registered_name != H.real_name)
 			return FALSE
 
 		if(vendor_role && !istype(H.job, vendor_role))
@@ -138,13 +136,16 @@
 				return
 
 			var/idx = text2path(params["vend"])
-			var/obj/item/card/id/I = usr.get_idcard()
+			var/obj/item/card/id/user_id = usr.get_idcard()
 
 			var/list/L = listed_products[idx]
 			var/item_category = L[1]
 			var/cost = L[3]
 
-			if(use_points && (item_category in I.marine_points) && I.marine_points[item_category] < cost)
+			if(!(user_id.id_flags & CAN_BUY_LOADOUT)) //If you use the quick-e-quip, you cannot also use the GHMMEs
+				to_chat(usr, span_warning("Access denied. You have already vended a loadout."))
+				return FALSE
+			if(use_points && (item_category in user_id.marine_points) && user_id.marine_points[item_category] < cost)
 				to_chat(usr, span_warning("Not enough points."))
 				if(icon_deny)
 					flick(icon_deny, src)
@@ -157,9 +158,9 @@
 					flick(icon_deny, src)
 				return
 
-			if(item_category in I.marine_buy_choices)
-				if(I.marine_buy_choices[item_category] && GLOB.marine_selector_cats[item_category])
-					I.marine_buy_choices[item_category] -= 1
+			if(item_category in user_id.marine_buy_choices)
+				if(user_id.marine_buy_choices[item_category] && GLOB.marine_selector_cats[item_category])
+					user_id.marine_buy_choices[item_category] -= 1
 				else
 					if(cost == 0)
 						to_chat(usr, span_warning("You can't buy things from this category anymore."))
@@ -174,7 +175,7 @@
 			else
 				vended_items += new idx(loc)
 
-			playsound(src, "vending", 25, 0)
+			playsound(src, SFX_VENDING, 25, 0)
 
 			if(icon_vend)
 				flick(icon_vend, src)
@@ -192,12 +193,13 @@
 			for (var/obj/item/vended_item in vended_items)
 				vended_item.on_vend(usr, faction, auto_equip = TRUE)
 
-			if(use_points && (item_category in I.marine_points))
-				I.marine_points[item_category] -= cost
+			if(use_points && (item_category in user_id.marine_points))
+				user_id.marine_points[item_category] -= cost
 			. = TRUE
+			user_id.id_flags |= USED_GHMME
 
 /obj/machinery/marine_selector/clothes
-	name = "GHMME Automated Closet"
+	name = "\improper GHMME Automated Closet"
 	desc = "An automated closet hooked up to a colossal storage unit of standard-issue uniform and armor."
 	icon_state = "marineuniform"
 	icon_vend = "marineuniform-vend"
@@ -226,7 +228,7 @@
 	listed_products = GLOB.marine_clothes_listed_products
 
 /obj/machinery/marine_selector/clothes/engi
-	name = "GHMME Automated Engineer Closet"
+	name = "\improper GHMME Automated Engineer Closet"
 	req_access = list(ACCESS_MARINE_ENGPREP)
 	vendor_role = /datum/job/terragov/squad/engineer
 	gives_webbing = FALSE
@@ -254,7 +256,7 @@
 	resistance_flags = INDESTRUCTIBLE
 
 /obj/machinery/marine_selector/clothes/medic
-	name = "GHMME Automated Corpsman Closet"
+	name = "\improper GHMME Automated Corpsman Closet"
 	req_access = list(ACCESS_MARINE_MEDPREP)
 	vendor_role = /datum/job/terragov/squad/corpsman
 	gives_webbing = FALSE
@@ -268,7 +270,7 @@
 	resistance_flags = INDESTRUCTIBLE
 
 /obj/machinery/marine_selector/clothes/smartgun
-	name = "GHMME Automated Smartgunner Closet"
+	name = "\improper GHMME Automated Smartgunner Closet"
 	req_access = list(ACCESS_MARINE_SMARTPREP)
 	vendor_role = /datum/job/terragov/squad/smartgunner
 	gives_webbing = FALSE
@@ -282,7 +284,7 @@
 	resistance_flags = INDESTRUCTIBLE
 
 /obj/machinery/marine_selector/clothes/leader
-	name = "GHMME Automated Leader Closet"
+	name = "\improper GHMME Automated Leader Closet"
 	req_access = list(ACCESS_MARINE_LEADER)
 	vendor_role = /datum/job/terragov/squad/leader
 	gives_webbing = FALSE
@@ -300,7 +302,7 @@
 	resistance_flags = INDESTRUCTIBLE
 
 /obj/machinery/marine_selector/clothes/commander
-	name = "GHMME Automated Commander Closet"
+	name = "\improper GHMME Automated Commander Closet"
 	req_access = list(ACCESS_MARINE_COMMANDER)
 	vendor_role = /datum/job/terragov/command/fieldcommander
 	gives_webbing = FALSE
@@ -334,14 +336,14 @@
 
 
 /obj/machinery/marine_selector/gear
-	name = "NEXUS Automated Equipment Rack"
+	name = "\improper NEXUS Automated Equipment Rack"
 	desc = "An automated equipment rack hooked up to a colossal storage unit."
 	icon_state = "marinearmory"
 	use_points = TRUE
 
 /obj/machinery/marine_selector/gear/medic
-	name = "NEXUS Automated Medical Equipment Rack"
-	desc = "An automated medic equipment rack hooked up to a colossal storage unit."
+	name = "\improper NEXUS automated medical equipment rack"
+	desc = "An automated equipment rack hooked up to a colossal storage of medical goods."
 	icon_state = "medic"
 	icon_vend = "medic-vend"
 	icon_deny = "medic-deny"
@@ -391,8 +393,8 @@
 	resistance_flags = INDESTRUCTIBLE
 
 /obj/machinery/marine_selector/gear/engi
-	name = "NEXUS Automated Engineer Equipment Rack"
-	desc = "An automated engineer equipment rack hooked up to a colossal storage unit."
+	name = "\improper NEXUS automated engineering equipment rack"
+	desc = "An automated equipment rack hooked up to a colossal storage of engineering-related goods."
 	icon_state = "engineer"
 	icon_vend = "engineer-vend"
 	icon_deny = "engineer-deny"
@@ -408,8 +410,8 @@
 	resistance_flags = INDESTRUCTIBLE
 
 /obj/machinery/marine_selector/gear/smartgun
-	name = "NEXUS Automated Smartgunner Equipment Rack"
-	desc = "An automated smartgunner equipment rack hooked up to a colossal storage unit."
+	name = "\improper NEXUS automated smartgun equipment rack"
+	desc = "An automated equipment rack hooked up to a colossal storage of smartgun-related goods."
 	icon_state = "smartgunner"
 	icon_vend = "smartgunner-vend"
 	icon_deny = "smartgunner-deny"
@@ -425,8 +427,8 @@
 	resistance_flags = INDESTRUCTIBLE
 
 /obj/machinery/marine_selector/gear/leader
-	name = "NEXUS Automated Squad Leader Equipment Rack"
-	desc = "An automated squad leader equipment rack hooked up to a colossal storage unit."
+	name = "\improper NEXUS automated squad leader's equipment rack"
+	desc = "An automated equipment rack hooked up to a colossal storage of basic cat-herding devices."
 	icon_state = "squadleader"
 	icon_vend = "squadleader-vend"
 	icon_deny = "squadleader-deny"
@@ -442,8 +444,8 @@
 	resistance_flags = INDESTRUCTIBLE
 
 /obj/machinery/marine_selector/gear/commander
-	name = "NEXUS Automated Field Commander Equipment Rack"
-	desc = "An automated field commander equipment rack hooked up to a colossal storage unit."
+	name = "\improper NEXUS automated command equipment rack"
+	desc = "An automated equipment rack hooked up to a colossal storage unit of advanced cat-herding devices."
 	icon_state = "squadleader"
 	icon_vend = "squadleader-vend"
 	icon_deny = "squadleader-deny"
@@ -476,7 +478,7 @@
 
 /obj/effect/vendor_bundle/basic
 	gear_to_spawn = list(
-		/obj/item/storage/box/MRE,
+		/obj/item/storage/box/mre,
 		/obj/item/paper/tutorial/medical,
 		/obj/item/paper/tutorial/mechanics,
 	)
@@ -497,7 +499,7 @@
 	)
 
 /obj/effect/vendor_bundle/stretcher
-	desc = "A collapsed medevac stretcher that can be carried around, beacon included."
+	desc = "A standard-issue TerraGov Marine Corps corpsman medivac stretcher. Comes with an extra beacon, but multiple beds can be linked to one beacon."
 	gear_to_spawn = list(
 		/obj/item/roller/medevac,
 		/obj/item/medevac_beacon,
@@ -507,7 +509,7 @@
 	gear_to_spawn = list(
 		/obj/item/weapon/gun/sentry/basic,
 		/obj/item/explosive/plastique,
-		/obj/item/explosive/grenade/chem_grenade/razorburn_smol,
+		/obj/item/explosive/grenade/chem_grenade/razorburn_small,
 		/obj/item/clothing/gloves/marine/insulated,
 		/obj/item/cell/high,
 		/obj/item/lightreplacer,
@@ -523,9 +525,9 @@
 /obj/effect/vendor_bundle/leader
 	gear_to_spawn = list(
 		/obj/item/explosive/plastique,
-		/obj/item/beacon/supply_beacon,
-		/obj/item/beacon/supply_beacon,
-		/obj/item/beacon/orbital_bombardment_beacon,
+		/obj/item/supply_beacon,
+		/obj/item/supply_beacon,
+		/obj/item/orbital_bombardment_beacon,
 		/obj/item/whistle,
 		/obj/item/compass,
 		/obj/item/binoculars/tactical,
@@ -536,8 +538,8 @@
 /obj/effect/vendor_bundle/commander
 	gear_to_spawn = list(
 		/obj/item/explosive/plastique,
-		/obj/item/beacon/supply_beacon,
-		/obj/item/beacon/orbital_bombardment_beacon,
+		/obj/item/supply_beacon,
+		/obj/item/orbital_bombardment_beacon,
 		/obj/item/healthanalyzer,
 		/obj/item/roller/medevac,
 		/obj/item/medevac_beacon,
@@ -551,7 +553,6 @@
 		/obj/item/stack/sheet/metal/large_stack,
 		/obj/item/tool/weldingtool/hugetank,
 		/obj/item/lightreplacer,
-		/obj/item/healthanalyzer,
 		/obj/item/tool/handheld_charger,
 		/obj/item/defibrillator,
 		/obj/item/medevac_beacon,
@@ -562,6 +563,8 @@
 		/obj/item/tweezers,
 		/obj/item/tool/surgery/solderingtool,
 		/obj/item/supplytablet,
+		/obj/item/cell/high,
+		/obj/item/circuitboard/apc,
 	)
 
 /obj/effect/vendor_bundle/white_dress
@@ -765,7 +768,10 @@
 		/obj/item/clothing/shoes/marine/separatist,
 	)
 
-#undef DEFAULT_TOTAL_BUY_POINTS
+#undef MARINE_TOTAL_BUY_POINTS
+#undef ROBOT_TOTAL_BUY_POINTS
+#undef SMARTGUNNER_TOTAL_BUY_POINTS
+#undef LEADER_TOTAL_BUY_POINTS
 #undef MEDIC_TOTAL_BUY_POINTS
 #undef ENGINEER_TOTAL_BUY_POINTS
 #undef COMMANDER_TOTAL_BUY_POINTS

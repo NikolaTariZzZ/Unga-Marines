@@ -11,12 +11,31 @@
 	damage = _damage
 	penetration = _penetration
 
+/datum/action/ability/activable/weapon_skill/ai_should_start_consider()
+	return TRUE
+
+/datum/action/ability/activable/weapon_skill/ai_should_use(atom/target)
+	if(!target)
+		return FALSE
+	if(isainode(target))
+		return FALSE
+	if(target.resistance_flags & INDESTRUCTIBLE)
+		return FALSE
+	if(!ismovable(target))
+		return
+	var/atom/movable/movable_target = target
+	if(movable_target.faction == owner.faction)
+		return FALSE
+	if(!can_use_ability(target, override_flags = ABILITY_IGNORE_SELECTED_ABILITY))
+		return FALSE
+	return TRUE
+
 /datum/action/ability/activable/weapon_skill/can_use_ability(atom/A, silent = FALSE, override_flags)
 	. = ..()
 	if(!.)
 		return
 	var/mob/living/carbon/carbon_owner = owner
-	if(carbon_owner.getStaminaLoss() > 0) //this specifically lets you use these abilities with no stamina, but not if you have actual stamina loss
+	if(carbon_owner.get_stamina_loss() > 0) //this specifically lets you use these abilities with no stamina, but not if you have actual stamina loss
 		if(!silent)
 			carbon_owner.balloon_alert(owner, "Catch your breath!")
 		return FALSE
@@ -27,4 +46,4 @@
 	ability_cost_override = ability_cost_override? ability_cost_override : ability_cost
 	if(ability_cost_override > 0)
 		var/mob/living/carbon/carbon_owner = owner
-		carbon_owner.adjustStaminaLoss(ability_cost_override)
+		carbon_owner.adjust_stamina_loss(ability_cost_override)

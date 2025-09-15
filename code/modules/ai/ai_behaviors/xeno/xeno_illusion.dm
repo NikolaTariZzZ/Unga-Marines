@@ -5,10 +5,10 @@
 	/// How close a human has to be in order for illusions to react
 	var/illusion_react_range = 5
 
-/datum/ai_behavior/xeno/illusion/New(loc, parent_to_assign, escorted_atom)
+/datum/ai_behavior/xeno/illusion/New(loc, mob/parent_to_assign, atom/escorted_atom)
 	if(!escorted_atom)
 		base_action = MOVING_TO_NODE
-	..()
+	return ..()
 
 /// We want a separate look_for_new_state in order to make illusions behave as we wish
 /datum/ai_behavior/xeno/illusion/look_for_new_state()
@@ -21,7 +21,7 @@
 				set_escorted_atom(src, victim)
 				return
 
-/datum/ai_behavior/xeno/illusion/attack_target(datum/soure, atom/attacked)
+/datum/ai_behavior/xeno/illusion/attack_target(datum/source, atom/attacked)
 	if(world.time < mob_parent.next_move)
 		return
 	if(!attacked)
@@ -34,7 +34,7 @@
 	illusion_parent.face_atom(attacked)
 	if(ismob(attacked))
 		illusion_parent.do_attack_animation(attacked, ATTACK_EFFECT_REDSLASH)
-		playsound(illusion_parent.loc, "alien_claw_flesh", 25, 1)
+		playsound(illusion_parent.loc, SFX_ALIEN_CLAW_FLESH, 25, 1)
 		return
 	illusion_parent.do_attack_animation(attacked, ATTACK_EFFECT_CLAW)
-	playsound(illusion_parent.loc, "alien_claw_metal", 25, 1)
+	playsound(illusion_parent.loc, SFX_ALIEN_CLAW_METAL, 25, 1)

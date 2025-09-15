@@ -11,13 +11,31 @@
 	maxHealth = 225
 	plasma_stored = 400
 	pixel_x = -16
-	old_x = -16
 	tier = XENO_TIER_THREE
 	upgrade = XENO_UPGRADE_NORMAL
-	var/emitting_gas = FALSE
 	life_value = 0
 	default_honor_value = 0
-	mob_size = MOB_SIZE_XENO
 	inherent_verbs = list(
 		/mob/living/carbon/xenomorph/proc/vent_crawl,
 	)
+
+/mob/living/carbon/xenomorph/defiler/primordial
+	upgrade = XENO_UPGRADE_PRIMO
+
+/mob/living/carbon/xenomorph/defiler/Corrupted
+	hivenumber = XENO_HIVE_CORRUPTED
+
+/mob/living/carbon/xenomorph/defiler/Alpha
+	hivenumber = XENO_HIVE_ALPHA
+
+/mob/living/carbon/xenomorph/defiler/Beta
+	hivenumber = XENO_HIVE_BETA
+
+/mob/living/carbon/xenomorph/defiler/Zeta
+	hivenumber = XENO_HIVE_ZETA
+
+/mob/living/carbon/xenomorph/defiler/admeme
+	hivenumber = XENO_HIVE_ADMEME
+
+/mob/living/carbon/xenomorph/defiler/Corrupted/fallen
+	hivenumber = XENO_HIVE_FALLEN

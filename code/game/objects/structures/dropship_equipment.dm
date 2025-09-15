@@ -2,13 +2,15 @@
 	name = "equipment attach point"
 	desc = "A place where heavy equipment can be installed with a powerloader."
 	anchored = TRUE
-	icon = 'icons/Marine/mainship_props.dmi'
+	icon = 'icons/obj/structures/mainship_props.dmi'
 	icon_state = "equip_base"
 	layer = ABOVE_OBJ_LAYER
 	dir = NORTH
 	density = TRUE
-	var/base_category //what kind of equipment this base accepts.
-	var/ship_tag //used to associate the base to a dropship.
+	/// what kind of equipment this base accepts.
+	var/base_category
+	/// used to associate the base to a dropship.
+	var/ship_tag
 	/// offset in pixels when equipment is attached
 	var/equipment_offset_x = 0
 	///y offset in pixels when attached
@@ -49,15 +51,15 @@
 	installed_equipment = loaded_equipment
 	loaded_equipment.ship_base = src
 
-	for(var/obj/docking_port/mobile/marine_dropship/S in SSshuttle.dropships)
-		if(S.id == ship_tag)
+	for(var/obj/docking_port/mobile/marine_dropship/S in SSshuttle.dropship_list)
+		if(S.shuttle_id == ship_tag)
 			loaded_equipment.linked_shuttle = S
 			S.equipments += loaded_equipment
 			break
 
 	loaded_equipment.pixel_x = equipment_offset_x
 	loaded_equipment.pixel_y = equipment_offset_y
-	loaded_equipment.shuttleRotate(dir2angle(dir)) // i dont know why rotation wasnt taken in account when this was made
+	loaded_equipment.shuttle_rotate(dir2angle(dir)) // i dont know why rotation wasnt taken in account when this was made
 
 	loaded_equipment.update_equipment()
 
@@ -77,7 +79,7 @@
 /obj/effect/attach_point/weapon/cas
 	ship_tag = SHUTTLE_CAS_DOCK
 	base_category = DROPSHIP_WEAPON_CAS
-	icon = 'icons/Marine/casship.dmi'
+	icon = 'icons/obj/structures/cas/ship.dmi'
 	icon_state = "15"
 
 /obj/effect/attach_point/weapon/cas/left
@@ -127,7 +129,7 @@
 
 /obj/effect/attach_point/fuel
 	name = "engine system attach point"
-	icon = 'icons/Marine/mainship_props64.dmi'
+	icon = 'icons/obj/structures/mainship_props64.dmi'
 	icon_state = "fuel_base"
 	base_category = DROPSHIP_FUEL_EQP
 
@@ -146,8 +148,6 @@
 /obj/effect/attach_point/computer/dropship2
 	ship_tag = SHUTTLE_NORMANDY
 
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////::
 
 //Actual dropship equipments
@@ -155,7 +155,7 @@
 /obj/structure/dropship_equipment
 	density = TRUE
 	anchored = TRUE
-	icon = 'icons/Marine/mainship_props.dmi'
+	icon = 'icons/obj/structures/mainship_props.dmi'
 	climbable = TRUE
 	layer = ABOVE_OBJ_LAYER //so they always appear above attach points when installed
 	resistance_flags = XENO_DAMAGEABLE
@@ -262,7 +262,7 @@
 				linked_console.selected_equipment = null
 	update_equipment()
 
-/obj/structure/dropship_equipment/beforeShuttleMove(turf/newT, rotation, move_mode, obj/docking_port/mobile/moving_dock)
+/obj/structure/dropship_equipment/before_shuttle_move(turf/newT, rotation, move_mode, obj/docking_port/mobile/moving_dock)
 	. = ..()
 	on_launch()
 
@@ -284,40 +284,75 @@
 		linked_console.selected_equipment = src
 		to_chat(user, span_notice("You select [src]."))
 
-//////////////////////////////////// flare launcher //////////////////////////////////////
-/obj/structure/dropship_equipment/shuttle/flare_launcher
+//////////////////////////////////// grenade launcher //////////////////////////////////////
+/obj/structure/dropship_equipment/shuttle/grenade_launcher
 	equip_category = DROPSHIP_WEAPON
-	name = "flare launcher system"
-	desc = "A system that deploys flares stronger than the inputted flares. Fits on the weapon attach points of dropships. You need a powerloader to lift it."
-	icon_state = "flare_system"
+	name = "grenade launcher system"
+	desc = "A system that deploys any inputted grenades on console activation. Fits on the weapon attach points of dropships. You need a powerloader to lift it."
+	icon_state = "nade_system"
 	dropship_equipment_flags = IS_INTERACTABLE
 	point_cost = 85
 	///cooldown for deployment
 	COOLDOWN_DECLARE(deploy_cooldown)
-	///amount of loaded flares
-	var/stored_amount = 4
-	///max capacity of flares in system
-	var/max_amount = 4
+	///List of loaded grenades
+	var/list/loaded_grenades
+	///How many grenades we can hold
+	var/grenade_capacity = 3
+	///Cooldown between firing grenades
+	var/fire_cooldown = 2 SECONDS
 
-/obj/structure/dropship_equipment/shuttle/flare_launcher/equipment_interact(mob/user)
-	if(!COOLDOWN_CHECK(src, deploy_cooldown)) //prevents spamming deployment
-		user.balloon_alert(user, "[src] is busy.")
-		return
-	if(stored_amount <= 0) //check for inserted flares
-		user.balloon_alert(user, "No flares remaining.")
-		return
-	deploy_flare()
-	user.balloon_alert(user, "You deploy [src], remaining flares [stored_amount].")
-	COOLDOWN_START(src, deploy_cooldown, 5 SECONDS)
-
-/obj/structure/dropship_equipment/shuttle/flare_launcher/attackby(obj/item/I, mob/user, params)
+/obj/structure/dropship_equipment/shuttle/grenade_launcher/Initialize(mapload)
 	. = ..()
-	if(istype(I, /obj/item/explosive/grenade/flare) && stored_amount < max_amount)
-		stored_amount++
-		user.balloon_alert(user, "You insert a flare, remaining flares [stored_amount].")
-		qdel(I)
+	//Populate contents
+	while(length(loaded_grenades) < grenade_capacity)
+		var/obj/item/explosive/grenade/new_grenade = new(src)
+		LAZYADD(loaded_grenades, new_grenade)
 
-/obj/structure/dropship_equipment/shuttle/flare_launcher/update_equipment()
+/obj/structure/dropship_equipment/shuttle/grenade_launcher/Destroy()
+	QDEL_LAZYLIST(loaded_grenades)
+	return ..()
+
+/obj/structure/dropship_equipment/shuttle/grenade_launcher/equipment_interact(mob/user)
+	if(!COOLDOWN_CHECK(src, deploy_cooldown)) //prevents spamming deployment
+		user.balloon_alert(user, "Busy")
+		return
+	if(length(loaded_grenades) <= 0) //check for inserted flares
+		user.balloon_alert(user, "No grenades left")
+		return
+	var/turf/target = get_ranged_target_turf(src, dir, 10)
+	var/obj/item/explosive/grenade/nade_to_launch = loaded_grenades[1]
+	nade_to_launch.activate()
+	nade_to_launch.forceMove(loc)
+	nade_to_launch.throw_at(target, 10, 2)
+	LAZYREMOVE(loaded_grenades, nade_to_launch)
+	COOLDOWN_START(src, deploy_cooldown, fire_cooldown)
+	user.balloon_alert(user, "[LAZYLEN(loaded_grenades)]/[grenade_capacity] remaining")
+	playsound(loc, 'sound/weapons/guns/fire/grenadelauncher.ogg', 40, 1)
+
+/obj/structure/dropship_equipment/shuttle/grenade_launcher/attackby(obj/item/I, mob/user, params)
+	. = ..()
+	if(!isgrenade(I))
+		return
+	if(LAZYLEN(loaded_grenades) >= grenade_capacity)
+		return
+
+	user.transferItemToLoc(I, src)
+	LAZYADD(loaded_grenades, I)
+	playsound(loc, 'sound/weapons/guns/interact/v51_load.ogg', 40, 1)
+	balloon_alert(user, "[LAZYLEN(loaded_grenades)]/[grenade_capacity] grenades loaded")
+
+/obj/structure/dropship_equipment/shuttle/grenade_launcher/attack_hand(mob/living/user)
+	. = ..()
+	if(!LAZYLEN(loaded_grenades))
+		return
+
+	var/obj/item/explosive/grenade/first_nade = loaded_grenades[1]
+	user.put_in_hands(first_nade)
+	loaded_grenades -= first_nade
+	playsound(loc, 'sound/weapons/flipblade.ogg', 25, 1, 5)
+	balloon_alert(user, "[LAZYLEN(loaded_grenades)]/[grenade_capacity] grenades loaded")
+
+/obj/structure/dropship_equipment/shuttle/grenade_launcher/update_equipment()
 	. = ..()
 	if(ship_base)
 		setDir(ship_base.dir)
@@ -325,21 +360,92 @@
 		setDir(initial(dir))
 	update_icon()
 
-/obj/structure/dropship_equipment/shuttle/flare_launcher/update_icon_state()
+/obj/structure/dropship_equipment/shuttle/grenade_launcher/update_icon_state()
 	. = ..()
 	if(ship_base)
-		icon_state = "flare_system_installed"
+		icon_state = "nade_system_installed"
 	else
-		icon_state = "flare_system"
+		icon_state = "nade_system"
 
-///gets target and deploy the flare launcher
-/obj/structure/dropship_equipment/shuttle/flare_launcher/proc/deploy_flare()
+//////////////////////////////////// tanglefoot emitter //////////////////////////////////////
+
+/obj/structure/dropship_equipment/shuttle/tangle_emitter
+	equip_category = DROPSHIP_WEAPON
+	name = "disposable tanglefoot emitter"
+	desc = "A system that can emit tanglefoot while landing the aircraft to support aggressive landing positions. Can only be used once every ten minutes. Fits on the weapon attach points of dropships. You need a powerloader to lift it."
+	icon_state = "tfoot_system"
+	point_cost = 150
+	dropship_equipment_flags = IS_INTERACTABLE
+	/// Whether the system is currently enabled to activate on landing or not
+	var/enabled = TRUE
+	/// What type of smoke to use
+	var/obj/item/explosive/grenade/smokebomb/drain/pellet/pellet_type
+	/// Cooldown for emitting smoke
+	var/cooldown_length = 10 MINUTES
+	COOLDOWN_DECLARE(use_cooldown)
+
+/obj/structure/dropship_equipment/shuttle/tangle_emitter/equipment_interact(mob/user)
+	if(!enabled)
+		enabled = TRUE
+		update_appearance()
+		user.balloon_alert(user, "Enabled")
+		RegisterSignal(linked_shuttle, COMSIG_SHUTTLE_SETMODE, PROC_REF(drop_pellet_to_location))
+		return
+	enabled = FALSE
+	update_appearance()
+	user.balloon_alert(user, "Disabled")
+	UnregisterSignal(linked_shuttle, COMSIG_SHUTTLE_SETMODE)
+
+/obj/structure/dropship_equipment/shuttle/tangle_emitter/update_equipment()
+	. = ..()
+	if(ship_base)
+		setDir(ship_base.dir)
+		if(enabled)
+			update_appearance()
+			RegisterSignal(linked_shuttle, COMSIG_SHUTTLE_SETMODE, PROC_REF(drop_pellet_to_location))
+	else
+		setDir(initial(dir))
+	update_appearance()
+
+/obj/structure/dropship_equipment/shuttle/tangle_emitter/update_icon_state()
+	. = ..()
+	if(ship_base)
+		if(COOLDOWN_CHECK(src, use_cooldown))
+			icon_state = "tfoot_system_installed"
+			if(enabled)
+				icon_state = "tfoot_system_enabled"
+		else
+			icon_state = "tfoot_system_empty"
+	else
+		icon_state = "tfoot_system"
+
+/// Sets up and activates smoke effect
+/obj/structure/dropship_equipment/shuttle/tangle_emitter/proc/drop_pellet_to_location(datum/source, new_mode)
+	if(!istype(linked_console, /obj/machinery/computer/camera_advanced/shuttle_docker/minidropship))
+		return
+	var/obj/machinery/computer/camera_advanced/shuttle_docker/minidropship/console = linked_console
+	var/turf/landing_spot = get_turf(console.eyeobj)
+	if(new_mode != SHUTTLE_PREARRIVAL || console.next_fly_state != SHUTTLE_ON_GROUND || !enabled || !landing_spot)
+		return
+	if(!COOLDOWN_CHECK(src, use_cooldown))
+		console.say("Emitter system recharging. Unable to deploy smoke.")
+		playsound(console, 'sound/machines/buzz-sigh.ogg', 25)
+		return
+
+	pellet_type = new(landing_spot)
+	pellet_type.activate()
+
+	COOLDOWN_START(src, use_cooldown, cooldown_length)
+	update_appearance()
+	addtimer(CALLBACK(src, PROC_REF(on_cooldown_end)), cooldown_length + 1 SECONDS)
 	playsound(loc, 'sound/weapons/guns/fire/tank_smokelauncher.ogg', 40, 1)
-	var/turf/target = get_ranged_target_turf(src, dir, 10)
-	var/obj/item/explosive/grenade/flare/strongerflare/flare_to_launch = new(loc)
-	flare_to_launch.turn_on()
-	flare_to_launch.throw_at(target, 10, 2)
-	stored_amount--
+	console.say("Emitter system deployed successfully.")
+	landing_spot.balloon_alert_to_viewers("A small pellet falls out of the sky!")
+
+/// Special effects for when system cooldown finishes
+/obj/structure/dropship_equipment/shuttle/tangle_emitter/proc/on_cooldown_end()
+	update_appearance()
+	playsound(loc, 'sound/machines/ping.ogg', 50, FALSE)
 
 //////////////////////////////////// turret holders //////////////////////////////////////
 
@@ -359,12 +465,18 @@
 	if(!deployed_turret)
 		var/obj/new_gun = new sentry_type(src)
 		deployed_turret = new_gun.loc
-		RegisterSignal(deployed_turret, COMSIG_OBJ_DECONSTRUCT, PROC_REF(clean_refs))
+		RegisterSignal(deployed_turret, COMSIG_QDELETING, PROC_REF(clean_refs))
+	if(istype(deployed_turret, /obj/machinery/deployable/mounted/sentry)) // fuck this runtime
+		deployed_turret.set_on(FALSE)
+
+/obj/structure/dropship_equipment/shuttle/sentry_holder/Destroy()
+	deployed_turret = null
+	return ..()
 
 ///This cleans the deployed_turret ref when the sentry is destroyed.
 /obj/structure/dropship_equipment/shuttle/sentry_holder/proc/clean_refs(atom/source, disassembled)
 	SIGNAL_HANDLER
-	UnregisterSignal(deployed_turret, COMSIG_OBJ_DECONSTRUCT)
+	UnregisterSignal(deployed_turret, COMSIG_QDELETING)
 	deployed_turret = null
 	dropship_equipment_flags &= ~IS_NOT_REMOVABLE
 
@@ -393,7 +505,6 @@
 		to_chat(user, span_notice("You retract [src]."))
 		undeploy_sentry()
 
-
 /obj/structure/dropship_equipment/shuttle/sentry_holder/update_equipment()
 	if(ship_base)
 		setDir(ship_base.dir)
@@ -401,7 +512,7 @@
 		if(deployed_turret)
 			deployed_turret.setDir(dir)
 			if(linked_shuttle && deployed_turret.camera)
-				if(linked_shuttle.id == SHUTTLE_ALAMO)
+				if(linked_shuttle.shuttle_id == SHUTTLE_ALAMO)
 					deployed_turret.camera.network.Add("dropship1") //accessible via the dropship camera console
 				else
 					deployed_turret.camera.network.Add("dropship2")
@@ -503,12 +614,12 @@
 
 /obj/structure/dropship_equipment/shuttle/weapon_holder/CanAllowThrough(atom/movable/mover, turf/target)
 	. = ..()
-	if(held_deployable.loc != src)
+	if(held_deployable?.loc != src)
 		return TRUE
 
 /obj/structure/dropship_equipment/shuttle/weapon_holder/machinegun
 	name = "machinegun deployment system"
-	desc = "A box that deploys a modified M56D crewserved machine gun. Fits on the crewserved weapon attach points of dropships. You need a powerloader to lift it."
+	desc = "A box that deploys a modified HSG-102 crewserved machine gun. Fits on the crewserved weapon attach points of dropships. You need a powerloader to lift it."
 	icon_state = "mg_system"
 	point_cost = 250
 	deployable_type = /obj/item/weapon/gun/hsg102/hsg_nest
@@ -539,7 +650,7 @@
 ////////////////////////////////// FUEL EQUIPMENT /////////////////////////////////
 
 /obj/structure/dropship_equipment/fuel
-	icon = 'icons/Marine/mainship_props64.dmi'
+	icon = 'icons/obj/structures/mainship_props64.dmi'
 	equip_category = DROPSHIP_FUEL_EQP
 
 
@@ -554,7 +665,6 @@
 		bound_width = initial(bound_width)
 		bound_height = initial(bound_height)
 		icon_state = initial(icon_state)
-
 
 ///////////////////////////////////// ELECTRONICS /////////////////////////////////////////
 
@@ -621,12 +731,11 @@
 	icon_state = "docking_comp"
 	point_cost = 0
 
-
 ////////////////////////////////////// WEAPONS ///////////////////////////////////////
 
 /obj/structure/dropship_equipment/cas/weapon
 	name = "abstract weapon"
-	icon = 'icons/Marine/mainship_props64.dmi'
+	icon = 'icons/obj/structures/mainship_props64.dmi'
 	equip_category = DROPSHIP_WEAPON_CAS
 	bound_width = 32
 	bound_height = 64
@@ -660,8 +769,6 @@
 		. += ammo_equipped.show_loaded_desc(user)
 		return
 	. += "It's empty."
-
-
 
 /obj/structure/dropship_equipment/cas/weapon/proc/deplete_ammo()
 	if(ammo_equipped)
@@ -749,7 +856,7 @@
 	name = "unguided rocket pod"
 	icon_state = "unguided_rocket"
 	desc = "an unguided high-explosive rocket pod. Moving this will require some sort of lifter."
-	icon = 'icons/Marine/mainship_props64.dmi'
+	icon = 'icons/obj/structures/mainship_props64.dmi'
 	firing_sound = 'sound/weapons/unguided_rocket.ogg'
 	firing_delay = 2
 	point_cost = 450
@@ -776,7 +883,7 @@
 	name = "minirocket pod"
 	icon_state = "minirocket_pod"
 	desc = "A mini rocket pod capable of launching six laser-guided mini rockets. Moving this will require some sort of lifter."
-	icon = 'icons/Marine/mainship_props64.dmi'
+	icon = 'icons/obj/structures/mainship_props64.dmi'
 	firing_sound = 'sound/weapons/gunship_rocketpod.ogg'
 	firing_delay = 10 //1 seconds
 	point_cost = 450
@@ -801,7 +908,7 @@
 	name = "laser beam gun"
 	icon_state = "laser_beam"
 	desc = "State of the art technology recently acquired by the TGMC, it fires a battery-fed pulsed laser beam at near lightspeed setting on fire everything it touches. Moving this will require some sort of lifter."
-	icon = 'icons/Marine/mainship_props64.dmi'
+	icon = 'icons/obj/structures/mainship_props64.dmi'
 	firing_sound = 'sound/weapons/gunship_laser.ogg'
 	firing_delay = 50 //5 seconds
 	point_cost = 750
@@ -818,13 +925,11 @@
 		else
 			icon_state = "laser_beam"
 
-
-
 /obj/structure/dropship_equipment/cas/weapon/launch_bay //This isn't printable, so having it under CAS shouldn't cause issues
 	name = "launch bay"
 	icon_state = "launch_bay"
 	desc = "A launch bay to drop special ordnance. Fits inside the dropship's crew weapon emplacement. Moving this will require some sort of lifter."
-	icon = 'icons/Marine/mainship_props.dmi'
+	icon = 'icons/obj/structures/mainship_props.dmi'
 	firing_sound = 'sound/weapons/guns/fire/gunshot.ogg'
 	firing_delay = 10 //1 seconds
 	equip_category = DROPSHIP_CREW_WEAPON //fits inside the central spot of the dropship
@@ -834,16 +939,15 @@
 	. = ..()
 	if(ammo_equipped?.ammo_count)
 		icon_state = "launch_bay_loaded"
+	else if(ship_base)
+		icon_state = "launch_bay"
 	else
-		if(ship_base)
-			icon_state = "launch_bay"
-		else
-			icon_state = "launch_bay"
+		icon_state = "launch_bay"
 
 //////////////// OTHER EQUIPMENT /////////////////
 
 /obj/structure/dropship_equipment/shuttle/operatingtable
-	name = "Dropship Operating Table Deployment System"
+	name = "\improper Dropship Operating Table Deployment System"
 	desc = "Used for advanced medical procedures. Fits on the crewserved weapon attach points of dropships. You need a powerloader to lift it."
 	equip_category = DROPSHIP_CREW_WEAPON
 	icon = 'icons/obj/surgery.dmi'
@@ -876,16 +980,15 @@
 	deployed_table.loc = loc
 	icon_state = "table1"
 
-/* Uncomment when you will actually use it, instead of leaving as invisible piece of shit in fabricator
 // bomb pod
 /obj/structure/dropship_equipment/cas/weapon/bomb_pod
 	name = "bomb pod"
 	icon_state = "bomb_pod"
 	desc = "A bomb pod capable of launching several large bombs. Moving this will require some sort of lifter."
-	icon = 'icons/Marine/mainship_props64.dmi'
+	icon = 'icons/obj/structures/mainship_props64.dmi'
 	firing_sound = 'sound/weapons/bombdrop_sound.ogg'
 	firing_delay = 2 SECONDS
-	point_cost = 450
+	point_cost = 0 // 450 or smth
 	dropship_equipment_flags = USES_AMMO|IS_WEAPON|IS_INTERACTABLE
 	ammo_type_used = CAS_BOMB
 
@@ -897,4 +1000,3 @@
 		icon_state = "bomb_pod_installed"
 	else
 		icon_state = "bomb_pod"
-*/

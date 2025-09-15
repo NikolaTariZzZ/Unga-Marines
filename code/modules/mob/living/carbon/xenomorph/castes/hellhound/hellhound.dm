@@ -8,7 +8,7 @@
 	wound_type = ""
 	upgrade_name = ""
 
-	caste_flags = CASTE_INNATE_HEALING|CASTE_INNATE_PLASMA_REGEN|CASTE_ACID_BLOOD
+	caste_flags = CASTE_INNATE_HEALING|CASTE_INNATE_PLASMA_REGEN
 
 	// *** Melee Attacks *** //
 	melee_damage = 35
@@ -52,8 +52,6 @@
 	layer = MOB_LAYER
 	pull_speed = -0.5
 
-	mob_size = MOB_SIZE_XENO
-
 	hivenumber = XENO_HIVE_YAUTJA
 
 /mob/living/carbon/xenomorph/hellhound/Initialize(mapload, mob/living/carbon/xenomorph/oldXeno, h_number)
@@ -88,8 +86,8 @@
 	to_chat(src, "<span style='color: red;'>Hellhounds are fiercely protective of their masters and will never leave their side if under attack.</span>")
 	to_chat(src, "<span style='color: red;'>Note that ANY Predator can give you orders. If they conflict, follow the latest one. If they dislike your performance they can ask for another ghost and everyone will mock you. So do a good job!</span>")
 
-/mob/living/carbon/xenomorph/hellhound/death(cause, gibbed)
-	. = ..(cause, gibbed, "lets out a horrible roar as it collapses and stops moving...")
+/mob/living/carbon/xenomorph/hellhound/death(gibbing, deathmessage = "lets out a horrible roar as it collapses and stops moving...", silent)
+	. = ..()
 	if(!.)
 		return
 	emote("roar")

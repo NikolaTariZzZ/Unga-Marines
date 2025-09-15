@@ -15,7 +15,7 @@ SUBSYSTEM_DEF(evacuation)
 	var/dest_index = 1
 	var/dest_status = NUKE_EXPLOSION_INACTIVE
 
-	var/flags_scuttle = FLAGS_SDEVAC_TIMELOCK
+	var/scuttle_flags = SDEVAC_TIMELOCK_flags
 	///How many marines were on ship when the dropship crashed
 	var/initial_human_on_ship = 0
 	///How many marines escaped
@@ -69,38 +69,41 @@ SUBSYSTEM_DEF(evacuation)
 			if(world.time < pod_cooldown + EVACUATION_POD_LAUNCH_COOLDOWN)
 				return
 			if(!length(pod_list)) // none left to pick from to evac
-				if(!length(SSshuttle.escape_pods)) // no valid pods left, all have launched/exploded
+				if(!length(SSshuttle.escape_pod_list)) // no valid pods left, all have launched/exploded
 					announce_evac_completion()
 				return
 			var/obj/docking_port/mobile/escape_pod/P = pick_n_take(pod_list)
 			P.launch()
 
-
-
 /datum/controller/subsystem/evacuation/proc/initiate_evacuation(override)
 	if(evac_status != EVACUATION_STATUS_STANDING_BY)
 		return FALSE
-	if(!override && flags_scuttle & (FLAGS_EVACUATION_DENY|FLAGS_SDEVAC_TIMELOCK))
+	if(!override && scuttle_flags & (EVACUATION_DENY_flags|SDEVAC_TIMELOCK_flags))
 		return FALSE
 	GLOB.enter_allowed = FALSE
 	evac_time = world.time
 	evac_status = EVACUATION_STATUS_INITIATING
 	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_EVACUATION_STARTED)
-	priority_announce("Emergency evacuation has been triggered. Please proceed to the escape pods. Evacuation in [EVACUATION_AUTOMATIC_DEPARTURE/600] minutes.", title = "Emergency Evacuation", type = ANNOUNCEMENT_PRIORITY, sound = 'sound/AI/evacuate.ogg', color_override = "orange")
+	var/sec_level_changed = SSsecurity_level.set_level(SEC_LEVEL_DELTA, FALSE) // TRUE if we weren't already on Delta alert
+	priority_announce(
+		type = ANNOUNCEMENT_PRIORITY,
+		title = "[sec_level_changed ? "Объявлена чрезвычайная ситуация Код Дельта. " : ""]Запуск капсул состоится через [EVACUATION_AUTOMATIC_DEPARTURE/600] минут.",
+		message = "Процесс экстренной эвакуации был запущен. Пожалуйста, проследуйте к спасательным капсулам.[sec_level_changed ? "\n\nКонтроль над ситуацией утерян. Всему персоналу приготовиться к неминуемуму. Это НЕ учебная тревога." : ""]",
+		sound = 'sound/AI/evacuate.ogg',
+		color_override = sec_level_changed ? "purple" : "orange"
+	)
 	xeno_message("A wave of adrenaline ripples through the hive. The fleshy creatures are trying to escape!")
-	pod_list = SSshuttle.escape_pods.Copy()
+	pod_list = SSshuttle.escape_pod_list.Copy()
 	for(var/obj/docking_port/mobile/escape_pod/pod AS in pod_list)
 		pod.prep_for_launch()
 	return TRUE
-
 
 /datum/controller/subsystem/evacuation/proc/begin_launch()
 	if(evac_status != EVACUATION_STATUS_INITIATING)
 		return FALSE
 	evac_status = EVACUATION_STATUS_IN_PROGRESS
-	priority_announce("WARNING: Evacuation order confirmed. Launching escape pods.", title = "Emergency Evacuation", type = ANNOUNCEMENT_PRIORITY, sound = 'sound/AI/evacuation_confirmed.ogg', color_override = "orange")
+	priority_announce("Приказ об эвакуации подтвержден. Запуск спасательных капсул.", title = "Экстренная Активация", type = ANNOUNCEMENT_PRIORITY, sound = 'sound/AI/evacuation_confirmed.ogg', color_override = "orange")
 	return TRUE
-
 
 /datum/controller/subsystem/evacuation/proc/cancel_evacuation()
 	if(evac_status != EVACUATION_STATUS_INITIATING)
@@ -108,11 +111,10 @@ SUBSYSTEM_DEF(evacuation)
 	GLOB.enter_allowed = TRUE
 	evac_time = null
 	evac_status = EVACUATION_STATUS_STANDING_BY
-	priority_announce("Evacuation has been cancelled.", title = "Emergency Evacuation", type = ANNOUNCEMENT_PRIORITY, sound = 'sound/AI/evacuate_cancelled.ogg', color_override = "orange")
+	priority_announce("Процесс эвакуации был отменен. Произвожу восстановление первичных систем...", title = "Экстренная Эвакуация", type = ANNOUNCEMENT_PRIORITY, sound = 'sound/AI/evacuate_cancelled.ogg', color_override = "orange")
 	for(var/obj/docking_port/mobile/escape_pod/pod AS in pod_list)
 		pod.unprep_for_launch()
 	return TRUE
-
 
 /datum/controller/subsystem/evacuation/proc/get_status_panel_eta()
 	switch(evac_status)
@@ -123,22 +125,20 @@ SUBSYSTEM_DEF(evacuation)
 			. = "NOW"
 
 /datum/controller/subsystem/evacuation/proc/announce_evac_completion()
-	priority_announce("ATTENTION: Evacuation complete.", title = "Emergency Evacuation", type = ANNOUNCEMENT_PRIORITY, sound = 'sound/AI/evacuation_complete.ogg', color_override = "orange")
+	priority_announce("Эвакуация завершена. Оставшемуся экипажу требуется завершить миссию.", title = "Эвакуация Завершена", type = ANNOUNCEMENT_PRIORITY, sound = 'sound/AI/evacuation_complete.ogg', color_override = "orange")
 	evac_status = EVACUATION_STATUS_COMPLETE
-
 
 /datum/controller/subsystem/evacuation/proc/enable_self_destruct(override)
 	if(dest_status != NUKE_EXPLOSION_INACTIVE)
 		return FALSE
-	if(!override && flags_scuttle & (FLAGS_SELF_DESTRUCT_DENY|FLAGS_SDEVAC_TIMELOCK))
+	if(!override && scuttle_flags & (SELF_DESTRUCT_DENY_flags|SDEVAC_TIMELOCK_flags))
 		return FALSE
 	dest_status = NUKE_EXPLOSION_ACTIVE
 	dest_master.toggle()
-	GLOB.marine_main_ship.set_security_level(SEC_LEVEL_DELTA)
+	SSsecurity_level.set_level(SEC_LEVEL_DELTA)
 	for(var/obj/machinery/floor_warn_light/self_destruct/light AS in alarm_lights)
 		light.enable()
 	return TRUE
-
 
 /datum/controller/subsystem/evacuation/proc/cancel_self_destruct(override)
 	if(dest_status != NUKE_EXPLOSION_ACTIVE)
@@ -158,13 +158,12 @@ SUBSYSTEM_DEF(evacuation)
 			I.toggle(TRUE)
 	dest_master.toggle(TRUE)
 	dest_index = 1
-	priority_announce("The emergency destruct system has been deactivated.", title = "Self Destruct System", type = ANNOUNCEMENT_PRIORITY, sound = 'sound/AI/selfdestruct_deactivated.ogg', color_override = "purple")
+	priority_announce("Протокол самоуничтожения деактивирован. Перезапуск систем.", title = "Протокол Самоуничтожения", type = ANNOUNCEMENT_PRIORITY, sound = 'sound/AI/selfdestruct_deactivated.ogg', color_override = "purple")
 	if(evac_status == EVACUATION_STATUS_STANDING_BY)
-		GLOB.marine_main_ship.set_security_level(SEC_LEVEL_RED, TRUE)
+		SSsecurity_level.set_level(SEC_LEVEL_RED, TRUE)
 	for(var/obj/machinery/floor_warn_light/self_destruct/light AS in alarm_lights)
 		light.disable()
 	return TRUE
-
 
 /datum/controller/subsystem/evacuation/proc/initiate_self_destruct(override)
 	if(dest_status >= NUKE_EXPLOSION_IN_PROGRESS)
@@ -177,7 +176,7 @@ SUBSYSTEM_DEF(evacuation)
 			dest_master.visible_message(span_warning("WARNING: Unable to trigger detonation. Please arm all control rods."))
 			return FALSE
 
-	priority_announce("DANGER. DANGER. Self destruct system activated. DANGER. DANGER. Self destruct in progress. DANGER. DANGER.", title = "Self Destruct System", type = ANNOUNCEMENT_PRIORITY, color_override = "purple")
+	priority_announce("ТРЕВОГА. ТРЕВОГА. ПРОТОКОЛ САМОУНИЧТОЖЕНИЯ ЗАВЕРШЕН. ТРЕВОГА. ТРЕВОГА. ДЕТОНАЦИЯ.", title = "Протокол Самоуничтожения", type = ANNOUNCEMENT_PRIORITY, color_override = "purple")
 	GLOB.enter_allowed = FALSE
 	dest_status = NUKE_EXPLOSION_IN_PROGRESS
 	playsound(dest_master, 'sound/machines/alarm.ogg', 75, 0, 30)

@@ -10,6 +10,7 @@ one type of shotgun ammo, but I think it helps in referencing it. ~N
 /obj/item/ammo_magazine/shotgun
 	name = "box of 12 gauge shotgun slugs"
 	desc = "A box filled with heavy shotgun shells. A timeless classic. 12 Gauge."
+	icon = 'icons/obj/items/ammo/packet.dmi'
 	icon_state = "slugs"
 	default_ammo = /datum/ammo/bullet/shotgun/slug
 	caliber = CALIBER_12G //All shotgun rounds are 12g right now.
@@ -52,9 +53,17 @@ one type of shotgun ammo, but I think it helps in referencing it. ~N
 	default_ammo = /datum/ammo/bullet/shotgun/tracker
 	icon_state_mini = "tracking"
 
+/obj/item/ammo_magazine/shotgun/blank
+	name = "box of 12 gauge blank shells"
+	desc = "A box filled with blank shotgun shells. 12 Gauge."
+	icon_state = "blank"
+	default_ammo = /datum/ammo/bullet/shotgun/blank
+	icon_state_mini = "blank"
+
 /obj/item/ammo_magazine/rifle/bolt
 	name = "box of 7.62x54mmR rifle rounds"
 	desc = "A box filled with rifle bullets."
+	icon = 'icons/obj/items/ammo/packet.dmi'
 	icon_state = "7.62" //Thank you Alterist
 	default_ammo = /datum/ammo/bullet/sniper/svd
 	caliber = CALIBER_762X54 //Cyka Blyat
@@ -75,6 +84,7 @@ one type of shotgun ammo, but I think it helps in referencing it. ~N
 /obj/item/ammo_magazine/rifle/martini
 	name = "box of .557/440 rifle rounds"
 	desc = "A box filled with rifle bullets."
+	icon = 'icons/obj/items/ammo/packet.dmi'
 	icon_state = ".557"
 	default_ammo = /datum/ammo/bullet/sniper/martini
 	caliber = CALIBER_557
@@ -90,6 +100,7 @@ one type of shotgun ammo, but I think it helps in referencing it. ~N
 /obj/item/ammo_magazine/pistol/derringer
 	name = "box of .40 rimfire pistol rounds"
 	desc = "A box filled with pistol bullets."
+	icon = 'icons/obj/items/ammo/packet.dmi'
 	icon_state = "derringer_box"
 	default_ammo = /datum/ammo/bullet/pistol/superheavy/derringer
 	caliber = CALIBER_41RIM
@@ -120,3 +131,19 @@ one type of shotgun ammo, but I think it helps in referencing it. ~N
 	icon_state = "mbx900_tracker"
 	default_ammo = /datum/ammo/bullet/shotgun/mbx900_tracker
 	icon_state_mini = "mbx900_tracker"
+
+/obj/item/ammo_magazine/shotgun/heavy_buckshot
+	name = "box of 6 gauge buckshot shells"
+	desc = "A box filled with buckshot spread shotgun shells. 6 Gauge."
+	caliber = CALIBER_6G
+	icon_state = "heavy_shotgun_buckshot"
+	default_ammo = /datum/ammo/bullet/shotgun/heavy_buckshot
+	icon_state_mini = "buckshot"
+
+/obj/item/ammo_magazine/shotgun/barrikada
+	name = "box of 6 gauge 'Barrikada' shells"
+	desc = "A box filled with high velocity shotgun slugs nicknamed 'Barrikada'. Rated to break through basically everything up to including tank engines. 6 Gauge."
+	caliber = CALIBER_6G
+	icon_state = "heavy_shotgun_barrikada"
+	default_ammo = /datum/ammo/bullet/shotgun/barrikada_slug
+	icon_state_mini = "buckshot"

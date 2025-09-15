@@ -10,7 +10,7 @@
 	<b>Tips:</b><BR>\
 	> Needs to be connected to the Vali system to collect green blood. You can connect it though the Vali system's configurations menu.<BR>\
 	> Filled by liquid reagent containers. Emptied by using an empty liquid reagent container. Can also be filled by pills.<BR>\
-	> Press your unique action key (SPACE by default) to load a single-use of the reagent effect after the blade has been filled up.<BR>"
+	> Press your unique action key (SPACE by default) to load a single-use of the reagent effect after the blade has been filled up.<BR><BR>"
 
 /datum/component/harvester
 	///reagent selected for actions
@@ -23,6 +23,7 @@
 		/datum/reagent/medicine/tramadol = 5,
 		/datum/reagent/medicine/kelotane = 5,
 		/datum/reagent/medicine/tricordrazine = 5,
+		/datum/reagent/medicine/dylovene = 5,
 	)
 	///Amount of reagents loaded into the blade
 	var/list/loaded_reagents = list()
@@ -81,7 +82,7 @@
 
 	examine_list += "<b>Compatible chemicals:</b>"
 	for(var/datum/reagent/reagent AS in loadable_reagents)
-		examine_list += "<span style='color:[initial(reagent.color)];font-weight:bold'>[initial(reagent.name)]</span>\n"
+		examine_list += "<span style='color:[initial(reagent.color)];font-weight:bold'>[initial(reagent.name)]</span>"
 
 
 ///Adds mechanics info to the weapon
@@ -175,7 +176,7 @@
 /datum/component/harvester/proc/update_loaded_color(datum/source, list/overlays_list)
 	SIGNAL_HANDLER
 	var/obj/item/item_parent = parent
-	var/image/item_overlay = image('icons/obj/items/vali.dmi', item_parent, "[initial(item_parent.icon_state)]_loaded") //RUTGMC EDIT CHANGE
+	var/image/item_overlay = image('icons/obj/items/vali.dmi', item_parent, "[initial(item_parent.icon_state)]_loaded")
 	if(!loaded_reagent)
 		item_overlay.color = COLOR_GREEN
 	else
@@ -220,16 +221,21 @@
 			INVOKE_ASYNC(src, PROC_REF(attack_bicaridine), source, target, user, weapon)
 
 		if(/datum/reagent/medicine/kelotane)
-			target.apply_damage(weapon.force*0.6, BRUTE, user.zone_selected)
-			target.fire_act(10, FLAME_COLOR_RED)
+			target.apply_damage(weapon.force * 0.6, BURN, user.zone_selected)
+			target.adjust_fire_stacks(5)
+			target.IgniteMob()
 
 		if(/datum/reagent/medicine/tramadol)
-			target.apply_damage(weapon.force*0.6, BRUTE, user.zone_selected)
+			target.apply_damage(weapon.force * 0.6, BRUTE, user.zone_selected)
 			target.apply_status_effect(/datum/status_effect/incapacitating/harvester_slowdown, 1 SECONDS)
 
 		if(/datum/reagent/medicine/tricordrazine)
-			target.apply_damage(weapon.force*0.6, BRUTE, user.zone_selected)
+			target.apply_damage(weapon.force * 0.6, BRUTE, user.zone_selected)
 			target.apply_status_effect(/datum/status_effect/shatter, 3 SECONDS)
+
+		if(/datum/reagent/medicine/dylovene)
+			target.apply_damage(weapon.force * 0.6, BURN, user.zone_selected)
+			target.apply_status_effect(STATUS_EFFECT_MICROWAVE, 3)
 
 	if(!loaded_reagents[loaded_reagent])
 		update_selected_reagent(null)
@@ -247,8 +253,8 @@
 /datum/component/harvester/proc/attack_bicaridine(datum/source, mob/living/target, mob/living/user, obj/item/weapon)
 	if(user.a_intent != INTENT_HELP) //Self-heal on attacking
 		new /obj/effect/temp_visual/telekinesis(get_turf(user))
-		target.apply_damage(weapon.force*0.6, BRUTE, user.zone_selected)
-		user.adjustStaminaLoss(-30)
+		target.apply_damage(weapon.force * 0.6, BRUTE, user.zone_selected)
+		user.adjust_stamina_loss(-30)
 		user.heal_overall_damage(5, 0, updating_health = TRUE)
 		return
 
@@ -259,7 +265,7 @@
 		var/skill_heal_amt = user.skills.getRating(SKILL_MEDICAL) * 5
 		target.heal_overall_damage(10 + skill_heal_amt, 0, updating_health = TRUE) //5u of Bica will normally heal 25 damage. Medics get this full amount
 	else
-		target.adjustStaminaLoss(-30)
+		target.adjust_stamina_loss(-30)
 		target.heal_overall_damage(5, 0, updating_health = TRUE)
 
 /datum/component/harvester/proc/select_reagent(datum/source)
@@ -277,8 +283,18 @@
 		if(initial(reagent_entry.name) == selected_option)
 			selected_reagent = reagent_entry
 
+	var/obj/item/item_parent = parent
+	item_parent.update_appearance(UPDATE_ICON)
+	loaded_reagent = null
+	var/parent_slot = reagent_select_action.owner.get_equipped_slot(parent)
+	if(parent_slot == SLOT_L_HAND)
+		reagent_select_action.owner.update_inv_l_hand()
+	else
+		reagent_select_action.owner.update_inv_r_hand()
+
 	update_selected_reagent(selected_reagent)
 
+	INVOKE_ASYNC(src, PROC_REF(activate_blade_async), item_parent, reagent_select_action.owner) //Load up on the chem we just picked
 
 /datum/component/harvester/proc/update_selected_reagent(datum/reagent/new_reagent)
 	selected_reagent = new_reagent

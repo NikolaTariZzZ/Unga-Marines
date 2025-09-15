@@ -35,6 +35,22 @@
 	full_name = "Quick equip 5"
 	quick_equip_slot = 5
 
+/datum/keybinding/human/interact_other_hand
+	name = "interact_other_hand"
+	full_name = "Interact with other hand"
+	keybind_signal = COMSIG_KB_HUMAN_INTERACT_OTHER_HAND
+
+/datum/keybinding/human/interact_other_hand/down(client/user)
+	. = ..()
+	if(.)
+		return
+
+	if(!ishuman(user.mob))
+		return
+	var/mob/living/carbon/human/human_user = user.mob
+
+	human_user.interact_other_hand()
+
 /datum/keybinding/human/unique_action
 	hotkey_keys = list("Space")
 	name = "unique_action"
@@ -46,6 +62,11 @@
 	name = "rail_attachment"
 	full_name = "Activate Rail attachment"
 	keybind_signal = COMSIG_KB_RAILATTACHMENT
+
+/datum/keybinding/human/muzzle_attachment
+	name = "muzzle_attachment"
+	full_name = "Activate Barrel attachment"
+	keybind_signal = COMSIG_KB_MUZZLEATTACHMENT
 
 /datum/keybinding/human/underrail_attachment
 	name = "underrail_attachment"
@@ -110,8 +131,15 @@
 	hotkey_keys = list("h")
 	name = "toggle_helmet_module"
 	full_name = "Toggle helmet module"
-	description = "Toggles your helmet module on or off"
+	description = "Toggles your helmet module on or off or activates it"
 	keybind_signal = COMSIG_KB_HELMETMODULE
+
+/datum/keybinding/human/toggle_armor_module
+	hotkey_keys = list("j")
+	name = "toggle_armor_module"
+	full_name = "Toggle armor module"
+	description = "Toggles your armor module or activates it"
+	keybind_signal = COMSIG_KB_ARMORMODULE
 
 /datum/keybinding/human/toggle_suit_light
 	hotkey_keys = list("l")

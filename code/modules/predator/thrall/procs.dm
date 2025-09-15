@@ -8,7 +8,7 @@
 		to_chat(wearer, span_warning("You've already claimed your equipment."))
 		return
 
-	if(wearer.stat || (wearer.lying_angle && !wearer.resting && !wearer.IsSleeping()) || (wearer.IsParalyzed() || wearer.IsUnconscious()) || wearer.lying_angle || wearer.buckled)
+	if(wearer.stat || (wearer.lying_angle && !wearer.resting && !wearer.has_status_effect(STATUS_EFFECT_SLEEPING)) || (wearer.has_status_effect(STATUS_EFFECT_PARALYZED) || wearer.has_status_effect(STATUS_EFFECT_UNCONSCIOUS)) || wearer.lying_angle || wearer.buckled)
 		to_chat(wearer, span_warning("You're not able to do that right now."))
 		return
 
@@ -53,11 +53,11 @@
 			if(YAUTJA_GEAR_STICK)
 				spawned_weapon = new /obj/item/weapon/yautja/combistick(wearer.loc)
 			if(YAUTJA_THRALL_GEAR_MACHETE)
-				spawned_weapon = new /obj/item/weapon/claymore/mercsword/machete(wearer.loc)
+				spawned_weapon = new /obj/item/weapon/sword/machete(wearer.loc)
 			if(YAUTJA_THRALL_GEAR_RAPIER)
-				spawned_weapon = new /obj/item/weapon/claymore/mercsword/ceremonial(wearer.loc)
+				spawned_weapon = new /obj/item/weapon/sword/ceremonial(wearer.loc)
 			if(YAUTJA_THRALL_GEAR_CLAYMORE)
-				spawned_weapon = new /obj/item/weapon/claymore(wearer.loc)
+				spawned_weapon = new /obj/item/weapon/sword(wearer.loc)
 			if(YAUTJA_THRALL_GEAR_FIREAXE)
 				spawned_weapon = new /obj/item/weapon/twohanded/fireaxe(wearer.loc)
 

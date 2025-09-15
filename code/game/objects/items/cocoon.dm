@@ -41,10 +41,11 @@
 
 /obj/structure/cocoon/process()
 	SSpoints.add_psy_points(hivenumber, COCOON_PSY_POINTS_REWARD)
+	GLOB.round_statistics.psypoints_from_cocoon += COCOON_PSY_POINTS_REWARD
 	//Gives marine cloneloss for a total of 30.
-	victim.adjustCloneLoss(0.5)
+	victim.adjust_clone_loss(0.5)
 
-/obj/structure/cocoon/take_damage(damage_amount, damage_type, damage_flag, effects, attack_dir, armour_penetration)
+/obj/structure/cocoon/take_damage(damage_amount, damage_type, damage_flag = null, effects, attack_dir, armour_penetration, mob/living/blame_mob)
 	. = ..()
 	if(anchored && obj_integrity < max_integrity * 0.5)
 		unanchor_from_nest()
@@ -54,7 +55,7 @@
 	new /obj/structure/bed/nest(loc)
 	anchored = FALSE
 	update_icon()
-	playsound(loc, "alien_resin_move", 35)
+	playsound(loc, SFX_ALIEN_RESIN_MOVE, 35)
 
 ///Stop producing points and release the victim if needed
 /obj/structure/cocoon/proc/life_draining_over(datum/source, must_release_victim = FALSE)
@@ -63,11 +64,12 @@
 	if(anchored)
 		unanchor_from_nest()
 	if(must_release_victim)
-		var/datum/job/xeno_job = SSjob.GetJobType(/datum/job/xenomorph)
-		xeno_job.add_job_points(larva_point_reward)
-		var/datum/hive_status/hive_status = GLOB.hive_datums[hivenumber]
-		hive_status.update_tier_limits()
-		GLOB.round_statistics.larva_from_cocoon += larva_point_reward / xeno_job.job_points_needed
+		if(SSticker.mode && !CHECK_BITFIELD(SSticker.mode.xeno_abilities_flags, ABILITY_CRASH))
+			var/datum/job/xeno_job = SSjob.GetJobType(/datum/job/xenomorph)
+			xeno_job.add_job_points(larva_point_reward)
+			var/datum/hive_status/hive_status = GLOB.hive_datums[hivenumber]
+			hive_status.update_tier_limits()
+			GLOB.round_statistics.larva_from_cocoon += larva_point_reward / xeno_job.job_points_needed
 		release_victim()
 	update_icon()
 
@@ -84,7 +86,7 @@
 ///Open the cocoon and move the victim out
 /obj/structure/cocoon/proc/release_victim(gib = FALSE)
 	REMOVE_TRAIT(victim, TRAIT_STASIS, TRAIT_STASIS)
-	playsound(loc, "alien_resin_move", 35)
+	playsound(loc, SFX_ALIEN_RESIN_MOVE, 35)
 	victim.forceMove(loc)
 	victim.setDir(NORTH)
 	victim.med_hud_set_status()
@@ -101,7 +103,7 @@
 			return
 		busy = TRUE
 		var/channel = SSsounds.random_available_channel()
-		playsound(user, "sound/effects/cutting_cocoon.ogg", 30, channel = channel)
+		playsound(user, 'sound/effects/cutting_cocoon.ogg', 30, channel = channel)
 		if(!do_after(user, 8 SECONDS, NONE, src))
 			busy = FALSE
 			user.stop_sound_channel(channel)

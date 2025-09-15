@@ -1,6 +1,44 @@
 //Some mob defines below
 #define AI_CAMERA_LUMINOSITY 6
 
+// Overlay Indexes
+#define PRED_LASER_LAYER 30
+#define BODYPARTS_LAYER 29
+#define WOUND_LAYER 28
+#define MOTH_WINGS_LAYER 27
+#define DAMAGE_LAYER 26
+#define UNIFORM_LAYER 25
+#define FLAY_LAYER 24
+#define ID_LAYER 23
+#define SHOES_LAYER 22
+#define GLOVES_LAYER 21
+#define BELT_LAYER 20
+#define GLASSES_LAYER 19
+#define SUIT_LAYER 18 //Possible make this an overlay of somethign required to wear a belt?
+#define HAIR_LAYER 17 //TODO: make part of head layer?
+#define EARS_LAYER 16
+#define FACEMASK_LAYER 15
+#define GOGGLES_LAYER 14	//For putting Ballistic goggles and potentially other things above masks
+#define HEAD_LAYER 13
+#define COLLAR_LAYER 12
+#define SUIT_STORE_LAYER 11
+#define KAMA_LAYER 10
+#define BACK_LAYER 9
+#define CAPE_LAYER 8
+#define HANDCUFF_LAYER 7
+#define L_HAND_LAYER 6
+#define R_HAND_LAYER 5
+#define BURST_LAYER 4 //Chestburst overlay
+#define OVERHEALTH_SHIELD_LAYER 3
+#define FIRE_LAYER 2 //If you're on fire
+#define LASER_LAYER 1 //For sniper targeting laser
+
+#define TOTAL_LAYERS 30
+
+#define MOTH_WINGS_BEHIND_LAYER 1
+
+#define TOTAL_UNDERLAYS 1
+
 //Mob movement define
 
 ///Speed mod for walk intent
@@ -57,13 +95,11 @@
 #define XENO_PERM_COEFF 0.8
 //=================================================
 
-#define HUMAN_STRIP_DELAY 40 //takes 40ds = 4s to strip someone.
 #define POCKET_STRIP_DELAY 20
 
 #define ALIEN_SELECT_AFK_BUFFER 1 // How many minutes that a person can be AFK before not being allowed to be an alien.
 
 //Life variables
-#define CARBON_BREATH_DELAY 2 // The interval in life ticks between breathe()
 
 ///The amount of damage you'll take per tick when you can't breath. Default value is 1
 #define CARBON_CRIT_MAX_OXYLOSS (round(SSmobs.wait/5, 0.1))
@@ -71,7 +107,7 @@
 #define CARBON_RECOVERY_OXYLOSS -5
 
 #define CARBON_KO_OXYLOSS 50
-#define HUMAN_CRITDRAG_OXYLOSS 3 //the amount of oxyloss taken per tile a human is dragged by a xeno while unconscious
+#define HUMAN_CRITDRAG_OXYLOSS 6 //the amount of oxyloss taken per tile a human is dragged by a xeno while unconscious
 
 #define HEAT_DAMAGE_LEVEL_1 1 //Amount of damage applied when your body temperature just passes the 360.15k safety point
 #define HEAT_DAMAGE_LEVEL_2 2 //Amount of damage applied when your body temperature passes the 400K point
@@ -113,17 +149,24 @@
 #define CUT "cut"
 #define BRUISE "bruise"
 #define STAMINA "stamina"
+#define PAIN "pain"
+#define EYE_DAMAGE "eye_damage"
+#define BRAIN_DAMAGE "brain_damage"
+#define INTERNAL_BLEEDING "internal_bleeding"
+#define ORGAN_DAMAGE "organ_damage"
+#define INFECTION "infection"
+
 //=================================================
 
-#define STUN "stun"
-#define WEAKEN "weaken"
-#define PARALYZE "paralyze"
-#define STAGGER "stagger"
-#define AGONY "agony" // Added in PAIN!
-#define STUTTER "stutter"
-#define EYE_BLUR "eye_blur"
-#define DROWSY "drowsy"
-#define SLUR "slur"
+#define EFFECT_STUN "stun"
+#define EFFECT_PARALYZE "paralyze"
+#define EFFECT_UNCONSCIOUS "unconscious"
+#define EFFECT_STAGGER "stagger"
+#define EFFECT_STAMLOSS "stamloss"
+#define EFFECT_STUTTER "stutter"
+#define EFFECT_EYE_BLUR "eye_blur"
+#define EFFECT_DROWSY "drowsy"
+
 //=================================================
 
 //damagetype
@@ -195,14 +238,20 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 //limb_status
 #define LIMB_BLEEDING (1<<0)
 #define LIMB_BROKEN (1<<1)
-#define LIMB_DESTROYED (1<<2) //limb is missing
+/// Limb is missing
+#define LIMB_DESTROYED (1<<2)
 #define LIMB_ROBOT (1<<3)
 #define LIMB_SPLINTED (1<<4)
-#define LIMB_NECROTIZED (1<<5) //necrotizing limb, nerves are dead.
-#define LIMB_AMPUTATED (1<<6) //limb was amputated cleanly or destroyed limb was cleaned up, thus causing no pain
-#define LIMB_REPAIRED (1<<7) //we just repaired the bone, stops the gelling after setting
-#define LIMB_STABILIZED (1<<8) //certain suits will support a broken limb while worn such as the b18
-#define LIMB_BIOTIC (1<<9) //limb is biotic
+/// Necrotizing limb, nerves are dead.
+#define LIMB_NECROTIZED (1<<5)
+/// Limb was amputated cleanly or destroyed limb was cleaned up, thus causing no pain
+#define LIMB_AMPUTATED (1<<6)
+/// We just repaired the bone, stops the gelling after setting
+#define LIMB_REPAIRED (1<<7)
+/// Certain suits will support a broken limb while worn such as the b18
+#define LIMB_STABILIZED (1<<8)
+/// Limb is biotic, gained after limb reattachments, gives 1.3 damage modifier
+#define LIMB_BIOTIC (1<<9)
 
 //limb_wound_status
 #define LIMB_WOUND_BANDAGED (1<<0)
@@ -337,6 +386,8 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 //How long it takes for a human to become undefibbable
 #define TIME_BEFORE_DNR 150 //In life ticks, multiply by 2 to have seconds
 
+///Default living `maxHealth`
+#define LIVING_DEFAULT_MAX_HEALTH 100
 
 //species_flags
 #define NO_BLOOD (1<<0)
@@ -385,23 +436,79 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 #define MOB_SIZE_XENO 2
 #define MOB_SIZE_BIG 3
 
+// Height defines
+// - They are numbers so you can compare height values (x height < y height)
+// - They do not start at 0 for futureproofing
+// - They skip numbers for futureproofing as well
+// Otherwise they are completely arbitrary
+#define MONKEY_HEIGHT_DWARF 2
+#define MONKEY_HEIGHT_MEDIUM 4
+#define MONKEY_HEIGHT_TALL HUMAN_HEIGHT_DWARF
+#define HUMAN_HEIGHT_DWARF 6
+#define HUMAN_HEIGHT_SHORTEST 8
+#define HUMAN_HEIGHT_SHORT 10
+#define HUMAN_HEIGHT_MEDIUM 12
+#define HUMAN_HEIGHT_TALL 14
+#define HUMAN_HEIGHT_TALLER 16
+#define HUMAN_HEIGHT_TALLEST 18
+
+/// Assoc list of all heights, cast to strings, to """"tuples"""""
+/// The first """tuple""" index is the upper body offset
+/// The second """tuple""" index is the lower body offset
+GLOBAL_LIST_INIT(human_heights_to_offsets, list(
+	"[MONKEY_HEIGHT_DWARF]" = list(-9, -3),
+	"[MONKEY_HEIGHT_MEDIUM]" = list(-7, -4),
+	"[HUMAN_HEIGHT_DWARF]" = list(-5, -4),
+	"[HUMAN_HEIGHT_SHORTEST]" = list(-2, -1),
+	"[HUMAN_HEIGHT_SHORT]" = list(-1, -1),
+	"[HUMAN_HEIGHT_MEDIUM]" = list(0, 0),
+	"[HUMAN_HEIGHT_TALL]" = list(1, 1),
+	"[HUMAN_HEIGHT_TALLER]" = list(2, 1),
+	"[HUMAN_HEIGHT_TALLEST]" = list(3, 2),
+))
+
+#define UPPER_BODY "upper body"
+#define LOWER_BODY "lower body"
+#define NO_MODIFY "do not modify"
+
+
+//tivi todo finish below with our used stuff
+/// Used for human height overlay adjustments
+/// Certain standing overlay layers shouldn't have a filter applied and should instead just offset by a pixel y
+/// This list contains all the layers that must offset, with its value being whether it's a part of the upper half of the body (TRUE) or not (FALSE)
+GLOBAL_LIST_INIT(layers_to_offset, list(
+	// Very tall hats will get cut off by filter
+	"[HEAD_LAYER]" = UPPER_BODY,
+	// Hair will get cut off by filter
+	"[HAIR_LAYER]" = UPPER_BODY,
+	// Long belts (sabre sheathe) will get cut off by filter
+	"[BELT_LAYER]" = LOWER_BODY,
+	// Everything below looks fine with or without a filter, so we can skip it and just offset
+	// (In practice they'd be fine if they got a filter but we can optimize a bit by not.)
+	"[GLASSES_LAYER]" = UPPER_BODY,
+	"[GLOVES_LAYER]" = LOWER_BODY,
+	"[HANDCUFF_LAYER]" = LOWER_BODY,
+	"[ID_LAYER]" = UPPER_BODY,
+	// These DO get a filter, I'm leaving them here as reference,
+	// to show how many filters are added at a glance
+	// BACK_LAYER (backpacks are big)
+	// BODYPARTS_HIGH_LAYER (arms)
+	// BODY_LAYER (body markings (full body), underwear (full body), eyes)
+	// BODY_ADJ_LAYER (external organs like wings)
+	// BODY_BEHIND_LAYER (external organs like wings)
+	// BODY_FRONT_LAYER (external organs like wings)
+	// DAMAGE_LAYER (full body)
+	// HIGHEST_LAYER (full body)
+	// UNIFORM_LAYER (full body)
+	// WOUND_LAYER (full body)
+))
+
 //taste sensitivity defines, used in mob/living/proc/taste
 #define TASTE_HYPERSENSITIVE 5 //anything below 5% is not tasted
 #define TASTE_SENSITIVE 10 //anything below 10%
 #define TASTE_NORMAL 15 //anything below 15%
 #define TASTE_DULL 30 //anything below 30%
 #define TASTE_NUMB 101 //no taste
-
-
-//defins for datum/hud
-
-#define HUD_STYLE_STANDARD 1
-#define HUD_STYLE_REDUCED 2
-#define HUD_STYLE_NOHUD 3
-#define HUD_VERSIONS 3
-#define HUD_SL_LOCATOR_COOLDOWN 0.5 SECONDS
-#define HUD_SL_LOCATOR_PROCESS_COOLDOWN 10 SECONDS
-
 
 //Blood levels
 #define BLOOD_VOLUME_MAXIMUM 600
@@ -410,51 +517,6 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 #define BLOOD_VOLUME_OKAY 336
 #define BLOOD_VOLUME_BAD 224
 #define BLOOD_VOLUME_SURVIVE 122
-
-#define HUMAN_MAX_PALENESS 30 //this is added to human skin tone to get value of pale_max variable
-
-
-// Overlay Indexes
-#define PRED_LASER_LAYER 32
-#define LASER_LAYER 31
-#define WOUND_LAYER 30
-#define MOTH_WINGS_LAYER 29
-#define MUTATIONS_LAYER 28
-#define DAMAGE_LAYER 27
-#define FLAY_LAYER 26
-#define UNIFORM_LAYER 25
-#define TAIL_LAYER 24 //bs12 specific. this hack is probably gonna come back to haunt me
-#define ID_LAYER 23
-#define SHOES_LAYER 22
-#define GLOVES_LAYER 21
-#define BELT_LAYER 20
-#define GLASSES_LAYER 19
-#define SUIT_LAYER 18 //Possible make this an overlay of somethign required to wear a belt?
-#define HAIR_LAYER 17 //TODO: make part of head layer?
-#define EARS_LAYER 16
-#define FACEMASK_LAYER 15
-#define GOGGLES_LAYER 14	//For putting Ballistic goggles and potentially other things above masks
-#define HEAD_LAYER 13
-#define COLLAR_LAYER 12
-#define SUIT_STORE_LAYER 11
-#define KAMA_LAYER 10
-#define BACK_LAYER 9
-#define CAPE_LAYER 8
-#define HANDCUFF_LAYER 7
-#define L_HAND_LAYER 6
-#define R_HAND_LAYER 5
-#define BURST_LAYER 4 //Chestburst overlay
-#define OVERHEALTH_SHIELD_LAYER 3
-#define TARGETED_LAYER 2 //for target sprites when held at gun point, and holo cards.
-#define FIRE_LAYER 1 //If you're on fire
-
-#define TOTAL_LAYERS 32
-
-#define MOTH_WINGS_BEHIND_LAYER 1
-
-#define TOTAL_UNDERLAYS 1
-
-#define ANTI_CHAINSTUN_TICKS 2
 
 #define BASE_GRAB_SLOWDOWN 3 //Slowdown called by /mob/setGrabState(newstate) in mob.dm when grabbing a target aggressively.
 
@@ -474,6 +536,14 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 //Xeno flags
 ///Xeno is currently performing a leap/dash attack
 #define XENO_LEAPING (1<<0)
+///Hive leader
+#define XENO_LEADER (1<<1)
+///Zoomed out
+#define XENO_ZOOMED (1<<2)
+///mobhud on
+#define XENO_MOBHUD (1<<3)
+///Agility on
+#define XENO_AGILITY (1<<4)
 
 #define HIVE_CAN_COLLAPSE_FROM_SILO (1<<1)
 
@@ -485,17 +555,15 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 #define XENO_DEFAULT_ACID_PUDDLE_DAMAGE 14 //Standard damage dealt by acid puddles
 #define XENO_ACID_WELL_FILL_TIME 2 SECONDS //How long it takes to add a charge to an acid pool
 #define XENO_ACID_WELL_FILL_COST 150 //Cost in plasma to apply a charge to an acid pool
+#define XENO_ACID_WELL_MAX_AUTOCHARGES 3 //Maximum number of autocharges for the acid well
 #define XENO_ACID_WELL_MAX_CHARGES 5 //Maximum number of charges for the acid well
 #define XENO_ACID_CHARGE_DAMAGE 30
 
 #define HIVE_CAN_HIJACK (1<<0)
 
 #define XENO_PULL_CHARGE_TIME 2 SECONDS
-#define XENO_SLOWDOWN_REGEN 0.4
 
 #define XENO_DEADHUMAN_DRAG_SLOWDOWN 2
-
-#define KING_SUMMON_TIMER_DURATION 5 MINUTES
 
 #define SPIT_UPGRADE_BONUS(Xenomorph) (Xenomorph.upgrade_as_number() ?  0.6 : 0.45 ) //Primo damage increase
 
@@ -504,15 +572,8 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 #define XENO_NEURO_AMOUNT_RECURRING 5
 #define XENO_NEURO_CHANNEL_TIME 0.25 SECONDS
 
-#define XENO_HEALTH_ALERT_TRIGGER_PERCENT 0.25 //If a xeno is damaged while its current hit points are less than this percent of its maximum, we send out an alert to the hive
-#define XENO_HEALTH_ALERT_TRIGGER_THRESHOLD 50 //If a xeno is damaged while its current hit points are less than this amount, we send out an alert to the hive
-#define XENO_HEALTH_ALERT_COOLDOWN 60 SECONDS //The cooldown on these xeno damage alerts
-#define XENO_SILO_HEALTH_ALERT_COOLDOWN 30 SECONDS //The cooldown on these xeno damage alerts
 #define XENO_HEALTH_ALERT_POINTER_DURATION 6 SECONDS //How long the alert directional pointer lasts.
 #define XENO_RALLYING_POINTER_DURATION 15 SECONDS //How long the rally hive pointer lasts
-#define XENO_SILO_DAMAGE_POINTER_DURATION 10 SECONDS //How long the alert directional pointer lasts when silos are damaged
-#define XENO_SILO_DETECTION_COOLDOWN 1 MINUTES
-#define XENO_SILO_DETECTION_RANGE 10//How far silos can detect hostiles
 #define XENO_HIVEMIND_DETECTION_RANGE 10 //How far out (in tiles) can the hivemind detect hostiles
 #define XENO_HIVEMIND_DETECTION_COOLDOWN 1 MINUTES
 
@@ -547,10 +608,10 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 #define CASTE_EXCLUDE_STRAINS (1<<17) // denotes castes/basetypes that should be excluded from being evoable as a strain
 
 // Xeno defines that affect evolution, considering making a new var for these
-#define CASTE_LEADER_TYPE (1<<16) //Whether we are a leader type caste, such as the queen, shrike or ?king?, and is affected by queen ban and playtime restrictions
-#define CASTE_CANNOT_EVOLVE_IN_CAPTIVITY (1<<17) //Whether we cannot evolve in the research lab
-#define CASTE_REQUIRES_FREE_TILE (1<<18) //Whether we require a free tile to evolve
-#define CASTE_INSTANT_EVOLUTION (1<<19) //Whether we require no evolution progress to evolve to this caste
+#define CASTE_LEADER_TYPE (1<<18) //Whether we are a leader type caste, such as the queen, shrike or ?king?, and is affected by queen ban and playtime restrictions
+#define CASTE_CANNOT_EVOLVE_IN_CAPTIVITY (1<<19) //Whether we cannot evolve in the research lab
+#define CASTE_REQUIRES_FREE_TILE (1<<20) //Whether we require a free tile to evolve
+#define CASTE_INSTANT_EVOLUTION (1<<21) //Whether we require no evolution progress to evolve to this caste
 
 #define CASTE_CAN_HOLD_FACEHUGGERS (1<<0)
 #define CASTE_CAN_BE_QUEEN_HEALED (1<<1)
@@ -561,14 +622,6 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 #define CASTE_CAN_CORRUPT_GENERATOR (1<<6) //Can corrupt a generator
 #define CASTE_CAN_RIDE_CRUSHER (1<<7) //Can ride a crusher
 
-#define HIVE_STATUS_SHOW_EMPTY (1<<0)
-#define HIVE_STATUS_COMPACT_MODE (1<<1)
-#define HIVE_STATUS_SHOW_GENERAL (1<<2)
-#define HIVE_STATUS_SHOW_POPULATION (1<<3)
-#define HIVE_STATUS_SHOW_XENO_LIST (1<<4)
-#define HIVE_STATUS_SHOW_STRUCTURES (1<<5)
-#define HIVE_STATUS_DEFAULTS (HIVE_STATUS_SHOW_EMPTY | HIVE_STATUS_SHOW_GENERAL | HIVE_STATUS_SHOW_POPULATION | HIVE_STATUS_SHOW_XENO_LIST | HIVE_STATUS_SHOW_STRUCTURES)
-
 //Charge-Crush
 #define CHARGE_OFF 0
 #define CHARGE_BUILDINGUP 1
@@ -576,26 +629,17 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 #define CHARGE_MAX 3
 
 //Hunter Defines
-#define HUNTER_STEALTH_COOLDOWN 50 //5 seconds
+#define HUNTER_STEALTH_COOLDOWN 5 SECONDS
 #define HUNTER_STEALTH_WALK_PLASMADRAIN 2
 #define HUNTER_STEALTH_RUN_PLASMADRAIN 5
 #define HUNTER_STEALTH_STILL_ALPHA 12 //95% transparency
 #define HUNTER_STEALTH_WALK_ALPHA 25 //90% transparency
 #define HUNTER_STEALTH_RUN_ALPHA 128 //50% transparency
-#define HUNTER_STEALTH_STEALTH_DELAY 30 //3 seconds before 95% stealth
-#define HUNTER_STEALTH_INITIAL_DELAY 20 //2 seconds before we can increase stealth
-#define HUNTER_POUNCE_SNEAKATTACK_DELAY 30 //3 seconds before we can sneak attack
+#define HUNTER_STEALTH_STEALTH_DELAY 3 SECONDS //time before 95% stealth
+#define HUNTER_STEALTH_INITIAL_DELAY 2 SECONDS //time before we can increase stealth
+#define HUNTER_POUNCE_SNEAKATTACK_DELAY 3 SECONDS //time before we can sneak attack
 #define HUNTER_SNEAK_SLASH_ARMOR_PEN 15 //bonus AP
-#define HUNTER_SNEAK_ATTACK_RUN_DELAY 2 SECONDS
 #define HUNTER_PSYCHIC_TRACE_COOLDOWN 5 SECONDS //Cooldown of the Hunter's Psychic Trace, and duration of its arrow
-#define HUNTER_SILENCE_STAGGER_STACKS 1 //Silence imposes this many stagger stacks
-#define HUNTER_SILENCE_SENSORY_STACKS 7 //Silence imposes this many eyeblur and deafen stacks.
-#define HUNTER_SILENCE_MUTE_DURATION 10 SECONDS //Silence imposes this many seconds of the mute status effect.
-#define HUNTER_SILENCE_RANGE 5 //Range in tiles of the Hunter's Silence.
-#define HUNTER_SILENCE_AOE 2 //AoE size of Silence in tiles
-#define HUNTER_SILENCE_MULTIPLIER 1.5 //Multiplier of stacks vs Hunter's Mark targets
-#define HUNTER_SILENCE_WHIFF_COOLDOWN 3 SECONDS //If we fail to target anyone with Silence, partial cooldown to prevent spam.
-#define HUNTER_SILENCE_COOLDOWN 30 SECONDS //Silence's cooldown
 #define HUNTER_VENT_CRAWL_TIME 2 SECONDS //Hunters can enter vents fast
 
 //Ravager defines:
@@ -608,13 +652,13 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 #define RAVAGER_ENDURE_DURATION_WARNING		0.7
 #define RAVAGER_ENDURE_HP_LIMIT				-125
 
-#define RAVAGER_RAGE_DURATION							10 SECONDS
-#define RAVAGER_RAGE_WARNING							0.7
-#define RAVAGER_RAGE_MIN_HEALTH_THRESHOLD				0.75 //The maximum % of HP we can have to trigger Rage
-#define RAVAGER_RAGE_STAGGERSTUN_IMMUNE_THRESHOLD		0.5
-#define RAVAGER_RAGE_ENDURE_INCREASE_PER_SLASH			2 SECONDS //The amount of time each slash during Rage increases Endure's duration
-#define RAVAGER_RAGE_HEALTH_RECOVERY_PER_SLASH			40 //Base amount of healing from slash during Rage
-#define RAVAGER_IMMORTALITY_DURATION					5 SECONDS
+#define RAVAGER_RAGE_DURATION 10 SECONDS
+#define RAVAGER_RAGE_WARNING 0.7
+#define RAVAGER_RAGE_MIN_HEALTH_THRESHOLD 0.75 //The maximum % of HP we can have to trigger Rage
+#define RAVAGER_RAGE_STAGGERSTUN_IMMUNE_THRESHOLD 0.5
+#define RAVAGER_RAGE_ENDURE_INCREASE_PER_SLASH 2 SECONDS //The amount of time each slash during Rage increases Endure's duration
+#define RAVAGER_RAGE_HEALTH_RECOVERY_PER_SLASH 20 //Base amount of healing from slash during Rage
+#define RAVAGER_IMMORTALITY_DURATION 5 SECONDS
 
 //crusher defines
 #define CRUSHER_STOMP_LOWER_DMG 40
@@ -643,6 +687,15 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 #define GORGER_CARNAGE_HEAL 0.2
 #define GORGER_CARNAGE_MOVEMENT -0.5
 #define GORGER_FEAST_DURATION -1 // lasts indefinitely, self-cancelled when insufficient plasma left
+#define GORGER_OPPOSE_COST 80
+#define GORGER_OPPOSE_HEAL 0.2 // in %
+
+/// This many units of greenblood are always stolen
+#define GORGER_GREENBLOOD_STEAL_FLAT 10
+/// bonus % of current greenblood taken from vali on drain
+#define GORGER_GREENBLOOD_STEAL_PERCENTAGE 25
+/// Amount of blood(plasma) gained per unit of greenblood drained from target.
+#define GORGER_GREENBLOOD_CONVERSION 1.25
 
 //carrier defines
 #define CARRIER_HUGGER_THROW_SPEED 2
@@ -713,6 +766,11 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 //Defender defines
 #define DEFENDER_CHARGE_RANGE 4
 
+//Baneling defines
+/// Not specified in seconds because it causes smoke to last almost four times as long if done so
+#define BANELING_SMOKE_DURATION 4
+#define BANELING_SMOKE_RANGE 4
+
 //Sentinel defines
 #define SENTINEL_TOXIC_SPIT_STACKS_PER 2 //Amount of debuff stacks to be applied per spit.
 #define SENTINEL_TOXIC_SLASH_COUNT 3 //Amount of slashes before the buff runs out
@@ -733,6 +791,14 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 //Praetorian defines
 #define PRAE_CHARGEDISTANCE 6
 
+//Dancer defines
+/// Armor penetration done by impale to marked targets
+#define DANCER_IMPALE_PENETRATION 20
+/// The maximum multiplier dancer impale can gain from debuffs
+#define DANCER_MAX_IMPALE_MULT 2.5
+/// The flat damage multiplier done by impale to non-carbon targets
+#define DANCER_NONHUMAN_IMPALE_MULT 1.5
+
 // Chimera defines
 //Stagger and slowdown stacks applied to adjacent living hostiles before/after a teleport
 #define CHIMERA_TELEPORT_DEBUFF_STAGGER_STACKS 2 SECONDS
@@ -742,8 +808,8 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 #define TIME_TO_DISSOLVE 5 SECONDS
 
 //misc
-
 #define STANDARD_SLOWDOWN_REGEN 0.3
+#define XENO_SLOWDOWN_REGEN 0.4
 
 #define HYPERVENE_REMOVAL_AMOUNT 8
 
@@ -775,18 +841,19 @@ GLOBAL_LIST_INIT(xenoupgradetiers, list(XENO_UPGRADE_BASETYPE, XENO_UPGRADE_INVA
 #define BODY_ZONE_PRECISE_L_FOOT "l_foot"
 #define BODY_ZONE_PRECISE_R_FOOT "r_foot"
 
-GLOBAL_LIST_INIT(human_body_parts, list(BODY_ZONE_HEAD,
-										BODY_ZONE_CHEST,
-										BODY_ZONE_PRECISE_GROIN,
-										BODY_ZONE_L_ARM,
-										BODY_ZONE_PRECISE_L_HAND,
-										BODY_ZONE_R_ARM,
-										BODY_ZONE_PRECISE_R_HAND,
-										BODY_ZONE_L_LEG,
-										BODY_ZONE_PRECISE_L_FOOT,
-										BODY_ZONE_R_LEG,
-										BODY_ZONE_PRECISE_R_FOOT
-										))
+GLOBAL_LIST_INIT(human_body_parts, list(
+	BODY_ZONE_HEAD,
+	BODY_ZONE_CHEST,
+	BODY_ZONE_PRECISE_GROIN,
+	BODY_ZONE_L_ARM,
+	BODY_ZONE_PRECISE_L_HAND,
+	BODY_ZONE_R_ARM,
+	BODY_ZONE_PRECISE_R_HAND,
+	BODY_ZONE_L_LEG,
+	BODY_ZONE_PRECISE_L_FOOT,
+	BODY_ZONE_R_LEG,
+	BODY_ZONE_PRECISE_R_FOOT
+))
 
 //Hostile simple animals
 #define AI_ON 1
@@ -798,7 +865,7 @@ GLOBAL_LIST_INIT(human_body_parts, list(BODY_ZONE_HEAD,
 #define STAMINA_STATE_IDLE 0
 #define STAMINA_STATE_ACTIVE 1
 
-#define UPDATEHEALTH(MOB) (addtimer(CALLBACK(MOB, TYPE_PROC_REF(/mob/living, updatehealth)), 1, TIMER_UNIQUE))
+#define UPDATEHEALTH(MOB) (addtimer(CALLBACK(MOB, TYPE_PROC_REF(/mob/living, update_health)), 1, TIMER_UNIQUE))
 
 #define GRAB_PIXEL_SHIFT_PASSIVE 6
 #define GRAB_PIXEL_SHIFT_AGGRESSIVE 12
@@ -836,6 +903,7 @@ GLOBAL_LIST_INIT(human_body_parts, list(BODY_ZONE_HEAD,
 #define AURA_HUMAN_MOVE "move"
 #define AURA_HUMAN_HOLD "hold"
 #define AURA_HUMAN_FOCUS "focus"
+#define AURA_HUMAN_FLAG "flag"
 
 #define AURA_XENO_BLESSWARDING "Blessing Of Warding"
 #define AURA_XENO_BLESSFRENZY "Blessing Of Frenzy"
@@ -902,10 +970,31 @@ GLOBAL_LIST_INIT(human_body_parts, list(BODY_ZONE_HEAD,
 #define ILLUSION_HIT_FILTER "illusion_hit_filter"
 
 #define WARRIOR_PUNCH_SLOWDOWN 3
-#define WARRIOR_PUNCH_STAGGER 3
+#define WARRIOR_PUNCH_STAGGER 3 SECONDS
 #define WARRIOR_PUNCH_EMPOWER_MULTIPLIER 1.8
 #define WARRIOR_PUNCH_GRAPPLED_DAMAGE_MULTIPLIER 1.8
 #define WARRIOR_PUNCH_GRAPPLED_DEBUFF_MULTIPLIER 1.5
 #define WARRIOR_PUNCH_GRAPPLED_PARALYZE 0.5 SECONDS
 #define WARRIOR_PUNCH_KNOCKBACK_DISTANCE 1
 #define WARRIOR_PUNCH_KNOCKBACK_SPEED 1
+
+//chest burst defines
+#define CARBON_NO_CHEST_BURST 0
+#define CARBON_IS_CHEST_BURSTING 1
+#define CARBON_CHEST_BURSTED 2
+
+//This is here because the damage defines aren't set before the AI defines and it breaks everything and I don't know where else to put it
+///Assoc list of items to use to treat different damage types
+GLOBAL_LIST_INIT(ai_damtype_to_heal_list, list(
+	BRUTE = GLOB.ai_brute_heal_items,
+	BURN = GLOB.ai_burn_heal_items,
+	TOX = GLOB.ai_tox_heal_items,
+	OXY = GLOB.ai_oxy_heal_items,
+	CLONE = GLOB.ai_clone_heal_items,
+	PAIN = GLOB.ai_pain_heal_items,
+	EYE_DAMAGE = GLOB.ai_eye_heal_items,
+	BRAIN_DAMAGE = GLOB.ai_brain_heal_items,
+	INTERNAL_BLEEDING = GLOB.ai_ib_heal_items,
+	ORGAN_DAMAGE = GLOB.ai_organ_heal_items,
+	INFECTION = GLOB.ai_infection_heal_items,
+))

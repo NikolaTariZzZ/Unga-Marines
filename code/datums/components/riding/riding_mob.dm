@@ -177,12 +177,10 @@
 		else
 			AM.layer = ABOVE_MOB_LAYER
 
-/datum/component/riding/creature/human/get_offsets(pass_index)
-	var/mob/living/carbon/human/H = parent
-	if(H.buckle_lying)
+/datum/component/riding/creature/human/get_offsets(pass_index, mob/living/mob, mob_type)
+	if(mob.lying_angle) // fireman carry
 		return list(TEXT_NORTH = list(0, 6), TEXT_SOUTH = list(0, 6), TEXT_EAST = list(0, 6), TEXT_WEST = list(0, 6))
-	else
-		return list(TEXT_NORTH = list(0, 6), TEXT_SOUTH = list(0, 6), TEXT_EAST = list(-6, 4), TEXT_WEST = list( 6, 4))
+	return list(TEXT_NORTH = list(0, 6), TEXT_SOUTH = list(0, 6), TEXT_EAST = list(-6, 4), TEXT_WEST = list(6, 4))
 
 /datum/component/riding/creature/human/force_dismount(mob/living/dismounted_rider)
 	var/atom/movable/AM = parent
@@ -190,7 +188,7 @@
 	dismounted_rider.Paralyze(1 SECONDS)
 	dismounted_rider.Knockdown(4 SECONDS)
 	dismounted_rider.visible_message(span_warning("[AM] pushes [dismounted_rider] off of [AM.p_them()]!"), \
-						span_warning("[AM] pushes you off of [AM.p_them()]!"))
+		span_warning("[AM] pushes you off of [AM.p_them()]!"))
 
 // ***************************************
 // *********** Simple Animals
@@ -270,7 +268,7 @@
 		to_chat(rider, span_danger("[carrying_crusher] falls to the ground, bringing you with [carrying_crusher.p_them()]!"))
 
 //Override this to set your vehicle's various pixel offsets
-/datum/component/riding/creature/crusher/get_offsets(pass_index, mob_type) // list(dir = x, y, layer)
+/datum/component/riding/creature/crusher/get_offsets(pass_index, mob, mob_type) // list(dir = x, y, layer)
 	. = list(TEXT_NORTH = list(0, 0), TEXT_SOUTH = list(0, 0), TEXT_EAST = list(0, 0), TEXT_WEST = list(0, 0))
 	if (riding_offsets["[mob_type]"])
 		. = riding_offsets["[mob_type]"]
@@ -349,3 +347,27 @@
 	if(widow.stat == UNCONSCIOUS)
 		dir = SOUTH
 	return ..()
+
+// ***************************************
+// *********** Saddled Rouny
+// ***************************************
+
+/datum/component/riding/creature/crusher/runner
+	can_be_driven = FALSE
+
+/datum/component/riding/creature/crusher/runner/handle_specials()
+	. = ..()
+	set_riding_offsets(RIDING_OFFSET_ALL, list(TEXT_NORTH = list(0, 8), TEXT_SOUTH = list(0, 6), TEXT_EAST = list(5, 8), TEXT_WEST = list(-5, 8)))
+	set_vehicle_dir_layer(SOUTH, ABOVE_MOB_LAYER)
+	set_vehicle_dir_layer(NORTH, ABOVE_MOB_LAYER)
+	set_vehicle_dir_layer(EAST, ABOVE_MOB_LAYER)
+	set_vehicle_dir_layer(WEST, ABOVE_MOB_LAYER)
+
+/// If the rouny gets knocked over, toss the riding human off aswell
+/datum/component/riding/creature/crusher/runner/check_carrier_fall_over(mob/living/carbon/xenomorph/runner/carrying_runner)
+	for(var/mob/living/rider AS in carrying_runner.buckled_mobs)
+		carrying_runner.unbuckle_mob(rider)
+		rider.Knockdown(1 SECONDS)
+		carrying_runner.visible_message(span_danger("[rider] topples off of [carrying_runner] as they both fall to the ground!"), \
+					span_danger("You fall to the ground, bringing [rider] with you!"), span_hear("You hear two consecutive thuds."))
+		to_chat(rider, span_danger("[carrying_runner] falls to the ground, bringing you with [carrying_runner.p_them()]!"))

@@ -1,13 +1,14 @@
 /obj/structure
 	icon = 'icons/obj/structures/structures.dmi'
-	var/climbable = FALSE
-	var/climb_delay = 50
-	var/flags_barrier = NONE
-	var/broken = FALSE //similar to machinery's stat BROKEN
 	obj_flags = CAN_BE_HIT
 	anchored = TRUE
 	allow_pass_flags = PASSABLE
 	destroy_sound = 'sound/effects/meteorimpact.ogg'
+	var/climbable = FALSE
+	var/climb_delay = 1 SECONDS
+	var/barrier_flags = NONE
+	/// Similar to machinery's stat BROKEN
+	var/broken = FALSE
 
 /obj/structure/proc/handle_barrier_chance(mob/living/M)
 	return FALSE
@@ -24,20 +25,16 @@
 	if(smoothing_flags & (SMOOTH_CORNERS|SMOOTH_BITMASK))
 		QUEUE_SMOOTH(src)
 		QUEUE_SMOOTH_NEIGHBORS(src)
-		icon_state = ""
-		if(smoothing_flags & SMOOTH_CORNERS)
-			icon_state = ""
 
 /obj/structure/proc/climb_on()
-
 	set name = "Climb structure"
 	set desc = "Climbs onto a structure."
-	set category = "Object.Mob"
+	set category = "IC.Mob"
 	set src in oview(1)
 
 	do_climb(usr)
 
-/obj/structure/specialclick(mob/living/carbon/user)
+/obj/structure/CtrlClick(mob/living/carbon/user)
 	. = ..()
 	INVOKE_ASYNC(src, PROC_REF(do_climb), user)
 
@@ -61,7 +58,7 @@
 	if(!user.Adjacent(src))
 		return
 
-	if((flags_atom & ON_BORDER))
+	if((atom_flags & ON_BORDER))
 		if(user_turf != destination_turf && user_turf != get_step(destination_turf, dir))
 			to_chat(user, span_warning("You need to be up against [src] to leap over."))
 			return
@@ -76,7 +73,7 @@
 			var/obj/structure/structure = object
 			if(structure.allow_pass_flags & PASS_WALKOVER)
 				continue
-		if(object.density && (!(object.flags_atom & ON_BORDER) || object.dir & get_dir(src,user)))
+		if(object.density && (!(object.atom_flags & ON_BORDER) || object.dir & get_dir(src,user)))
 			to_chat(user, span_warning("There's \a [object.name] in the way."))
 			return
 
@@ -85,7 +82,7 @@
 			var/obj/structure/structure = object
 			if(structure.allow_pass_flags & PASS_WALKOVER)
 				continue
-		if(object.density && (object.flags_atom & ON_BORDER) && object.dir & get_dir(user, src))
+		if(object.density && (object.atom_flags & ON_BORDER) && object.dir & get_dir(user, src))
 			to_chat(user, span_warning("There's \a [object.name] in the way."))
 			return
 
@@ -96,7 +93,7 @@
 	if(user.do_actions || !can_climb(user))
 		return
 
-	user.visible_message(span_warning("[user] starts [flags_atom & ON_BORDER ? "leaping over" : "climbing onto"] \the [src]!"))
+	user.visible_message(span_warning("[user] starts [atom_flags & ON_BORDER ? "leaping over" : "climbing onto"] \the [src]!"))
 
 	if(!do_after(user, climb_delay, IGNORE_HELD_ITEM, src, BUSY_ICON_GENERIC))
 		return
@@ -109,52 +106,45 @@
 		user.unbuckle_mob(m)
 
 	user.forceMove(destination_turf)
-	user.visible_message(span_warning("[user] [flags_atom & ON_BORDER ? "leaps over" : "climbs onto"] \the [src]!"))
+	user.visible_message(span_warning("[user] [atom_flags & ON_BORDER ? "leaps over" : "climbs onto"] \the [src]!"))
 
 /obj/structure/proc/structure_shaken()
-
 	for(var/mob/living/M in get_turf(src))
-
 		if(M.lying_angle)
 			return //No spamming this on people.
-
 		M.Paralyze(2 SECONDS)
 		to_chat(M, span_warning("You topple as \the [src] moves under you!"))
 
-		if(prob(25))
+		if(!prob(25))
+			return
 
-			var/damage = rand(15,30)
-			if(!ishuman(M))
-				to_chat(M, span_danger("You land heavily!"))
-				M.apply_damage(damage, BRUTE)
-				UPDATEHEALTH(M)
-				return
+		var/damage = rand(15,30)
+		if(!ishuman(M))
+			to_chat(M, span_danger("You land heavily!"))
+			M.apply_damage(damage, BRUTE, updating_health = TRUE)
+			return
 
-			var/mob/living/carbon/human/H = M
-			var/datum/limb/affecting
+		var/mob/living/carbon/human/H = M
+		var/datum/limb/affecting
 
-			switch(pick(list("ankle","wrist","head","knee","elbow")))
-				if("ankle")
-					affecting = H.get_limb(pick("l_foot", "r_foot"))
-				if("knee")
-					affecting = H.get_limb(pick("l_leg", "r_leg"))
-				if("wrist")
-					affecting = H.get_limb(pick("l_hand", "r_hand"))
-				if("elbow")
-					affecting = H.get_limb(pick("l_arm", "r_arm"))
-				if("head")
-					affecting = H.get_limb("head")
+		switch(pick(list("ankle","wrist","head","knee","elbow")))
+			if("ankle")
+				affecting = H.get_limb(pick("l_foot", "r_foot"))
+			if("knee")
+				affecting = H.get_limb(pick("l_leg", "r_leg"))
+			if("wrist")
+				affecting = H.get_limb(pick("l_hand", "r_hand"))
+			if("elbow")
+				affecting = H.get_limb(pick("l_arm", "r_arm"))
+			if("head")
+				affecting = H.get_limb("head")
 
-			if(affecting)
-				to_chat(M, span_danger("You land heavily on your [affecting.display_name]!"))
-				affecting.take_damage_limb(damage)
-			else
-				to_chat(H, span_danger("You land heavily!"))
-				H.apply_damage(damage, BRUTE)
-
-			UPDATEHEALTH(H)
-			H.UpdateDamageIcon()
-
+		if(affecting)
+			to_chat(M, span_danger("You land heavily on your [affecting.display_name]!"))
+			affecting.take_damage_limb(damage, updating_health = TRUE)
+		else
+			to_chat(H, span_danger("You land heavily!"))
+			H.apply_damage(damage, BRUTE, updating_health = TRUE)
 
 /obj/structure/can_interact(mob/user)
 	. = ..()
@@ -165,7 +155,6 @@
 		return FALSE
 
 	return TRUE
-
 
 /obj/structure/attack_hand(mob/living/user)
 	. = ..()
@@ -179,16 +168,6 @@
 
 /obj/structure/get_acid_delay()
 	return 4 SECONDS
-
-///overrides the turf's normal footstep sound
-/obj/structure/proc/footstep_override(atom/movable/source, list/footstep_overrides)
-	SIGNAL_HANDLER
-	return //override as required with the specific footstep sound
-
-///returns that src is covering its turf. Used to prevent turf interactions such as water
-/obj/structure/proc/turf_cover_check(atom/movable/source)
-	SIGNAL_HANDLER
-	return TRUE
 
 /obj/structure/effect_smoke(obj/effect/particle_effect/smoke/S)
 	. = ..()

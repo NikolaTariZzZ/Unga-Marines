@@ -6,7 +6,7 @@
 	allowed_tools = list(
 		/obj/item/tool/surgery/circular_saw = 100,
 		/obj/item/tool/hatchet = 75,
-		/obj/item/weapon/claymore = 75,
+		/obj/item/weapon/sword = 75,
 	)
 
 	min_duration = 90
@@ -32,14 +32,14 @@
 	span_notice("You are beginning to cut off [target]'s [affected.display_name] with \the [tool]."))
 	target.balloon_alert_to_viewers("Sawing...")
 	target.custom_pain("Your [affected.display_name] is being ripped apart!", 1)
-	..()
+	return ..()
 
 /datum/surgery_step/cut_limb/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected)
 	user.visible_message(span_notice("[user] cuts off [target]'s [affected.display_name] with \the [tool]."), \
 	span_notice("You cut off [target]'s [affected.display_name] with \the [tool]."))
 	target.balloon_alert_to_viewers("Success")
-	affected.droplimb(1)
-	target.updatehealth()
+	affected.drop_limb(TRUE, silent = TRUE)
+	target.update_health()
 	return ..()
 
 /datum/surgery_step/generic/cut_limb/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool, datum/limb/affected)

@@ -58,8 +58,8 @@
 /mob/proc/update_inv_ears()
 	return
 
-/mob/proc/update_targeted()
+/mob/proc/update_burst()
 	return
 
-/mob/proc/update_burst()
+/mob/proc/hud_set_hunter()
 	return

@@ -255,7 +255,7 @@
 ///AMMO - for both bullets and magazines
 /datum/greyscale_config/ammo
 	json_config = 'code/datums/greyscale/json_configs/ammo.json'
-	icon_file = 'icons/obj/items/ammo.dmi'
+	icon_file = 'icons/obj/items/ammo/misc.dmi'
 
 ///PROJECTILES
 /datum/greyscale_config/projectile
@@ -332,13 +332,13 @@
 
 //Capes
 /datum/greyscale_config/cape
-	icon_file = 'icons/mob/modular/capes_saro.dmi'
+	icon_file = 'icons/mob/modular/capes.dmi'
 	json_config = 'code/datums/greyscale/json_configs/cape.json'
 
 
 //Cape highlights
 /datum/greyscale_config/cape_highlight
-	icon_file = 'icons/mob/modular/capes_highlight_saro.dmi'
+	icon_file = 'icons/mob/modular/capes_highlight.dmi'
 	json_config = 'code/datums/greyscale/json_configs/cape_highlight.json'
 
 

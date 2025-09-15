@@ -5,7 +5,7 @@
 /obj/item/stack/medical
 	name = "medical pack"
 	singular_name = "medical pack"
-	item_icons = list(
+	worn_icon_list = list(
 		slot_l_hand_str = 'icons/mob/inhands/equipment/medical_left.dmi',
 		slot_r_hand_str = 'icons/mob/inhands/equipment/medical_right.dmi',
 	)
@@ -43,7 +43,7 @@
 		target.balloon_alert(user, "already busy")
 		return
 
-	var/datum/limb/affecting = user.client.prefs.toggles_gameplay & RADIAL_MEDICAL ? radial_medical(target, user) : target.get_limb(user.zone_selected)
+	var/datum/limb/affecting = user?.client?.prefs?.toggles_gameplay & RADIAL_MEDICAL ? radial_medical(target, user) : target.get_limb(user.zone_selected)
 	if(!user.get_active_held_item(src))
 		return
 	if(HAS_TRAIT(target, TRAIT_FOREIGN_BIO) && !alien)
@@ -84,18 +84,20 @@
 
 	if(affecting.limb_status & LIMB_DESTROYED)
 		patient.balloon_alert(user, "limb destroyed")
-		return
+		return FALSE
 
 	var/unskilled_penalty = (user.skills.getRating(SKILL_MEDICAL) < skill_level_needed) ? 0.5 : 1
 	var/list/patient_limbs = patient.limbs.Copy()
 	patient_limbs -= affecting
-	while(affecting)
+	while(affecting && amount)
 		if(!do_after(user, SKILL_TASK_VERY_EASY / (unskilled_penalty ** 2), NONE, patient, BUSY_ICON_FRIENDLY, BUSY_ICON_MEDICAL, extra_checks = CALLBACK(src, PROC_REF(can_affect_limb), affecting)))
 			patient.balloon_alert(user, "Stopped tending")
-			return
+			return FALSE
 		var/affected = heal_limb(affecting, unskilled_penalty)
+		if(affected)
+			use(1)
+			record_healing(user,M)
 		generate_treatment_messages(user, patient, affecting, affected)
-		use(1)
 		affecting = null
 		while(!affecting)
 			var/candidate = popleft(patient_limbs)
@@ -105,9 +107,12 @@
 			if(!length(patient_limbs))
 				break
 	patient.balloon_alert(user, "Finished tending")
+	return TRUE
 
 /// return TRUE if a given limb can be healed by src, FALSE otherwise
 /obj/item/stack/medical/heal_pack/proc/can_heal_limb(datum/limb/affecting)
+	if(!affecting)
+		return FALSE
 	if(affecting.limb_status & LIMB_DESTROYED)
 		return FALSE
 	if(!can_affect_limb(affecting))
@@ -187,7 +192,7 @@
 
 /obj/item/stack/medical/heal_pack/advanced
 	dir = NORTH
-	flags_atom = DIRLOCK
+	atom_flags = DIRLOCK
 	skill_level_needed = SKILL_MEDICAL_PRACTICED
 	unskilled_delay = SKILL_TASK_EASY
 
@@ -252,6 +257,8 @@
 		return
 	if(affecting.apply_splints(src, user == M ? (applied_splint_health*max(user.skills.getRating(SKILL_MEDICAL) - 1, 0)) : applied_splint_health*user.skills.getRating(SKILL_MEDICAL), user, M))
 		use(1)
+		return TRUE
+	return FALSE
 
 /obj/item/stack/medical/heal_pack/advanced/bruise_pack/predator
 	name = "mending herbs"
@@ -293,13 +300,12 @@
 	name = "combat trauma kit"
 	singular_name = "combat trauma kit"
 	desc = "An expensive huge kit for prolonged combat conditions. Has more space and better medicine compared to a regular one."
-	icon = 'icons/obj/stack_objects.dmi'
-	item_icons = list(
+	worn_icon_list = list(
 		slot_l_hand_str = 'icons/mob/inhands/equipment/medical_left.dmi',
 		slot_r_hand_str = 'icons/mob/inhands/equipment/medical_right.dmi',
 	)
 	icon_state = "brute_advanced"
-	item_state = "brute_advanced"
+	worn_icon_state = "brute_advanced"
 	amount = 140
 	max_amount = 140
 	w_class = WEIGHT_CLASS_NORMAL
@@ -319,12 +325,12 @@
 	singular_name = "combat burn kit"
 	desc = "An expensive huge kit for prolonged combat conditions. Has more space and better medicine compared to a regular one."
 	icon = 'icons/obj/stack_objects.dmi'
-	item_icons = list(
+	worn_icon_list = list(
 		slot_l_hand_str = 'icons/mob/inhands/equipment/medical_left.dmi',
 		slot_r_hand_str = 'icons/mob/inhands/equipment/medical_right.dmi',
 	)
 	icon_state = "burn_advanced"
-	item_state = "burn_advanced"
+	worn_icon_state = "burn_advanced"
 	w_class = WEIGHT_CLASS_NORMAL
 	amount = 140
 	max_amount = 140

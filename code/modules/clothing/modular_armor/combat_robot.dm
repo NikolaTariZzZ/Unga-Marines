@@ -3,9 +3,9 @@
 	name = "XR-1 armor plating"
 	desc = "Medium armor plating designed for self mounting on TerraGov combat robotics. It has self-sealing bolts for mounting on robotic owners inside."
 
-	item_icons = list(slot_wear_suit_str = 'icons/mob/modular/robot_armor.dmi')
+	worn_icon_list = list(slot_wear_suit_str = 'icons/mob/modular/robot_armor.dmi')
 	icon_state = "chest"
-	item_state = "chest"
+	worn_icon_state = "chest"
 	species_exception = list(/datum/species/robot)
 	soft_armor = MARINE_ARMOR_MEDIUM
 	slowdown = SLOWDOWN_ARMOR_MEDIUM
@@ -15,37 +15,55 @@
 	greyscale_config = /datum/greyscale_config/robot
 	greyscale_colors = ARMOR_PALETTE_DRAB
 
-	attachments_allowed = list(
-		/obj/item/armor_module/module/better_shoulder_lamp,
-		/obj/item/armor_module/module/pluto,
-		/obj/item/armor_module/module/fire_proof,
-		/obj/item/armor_module/module/tyr_extra_armor,
-		/obj/item/armor_module/module/tyr_extra_armor/mark1,
-		/obj/item/armor_module/module/ballistic_armor,
-		/obj/item/armor_module/module/eshield,
-
-		/obj/item/armor_module/storage/general,
-		/obj/item/armor_module/storage/ammo_mag,
-		/obj/item/armor_module/storage/engineering,
-		/obj/item/armor_module/storage/medical,
-		/obj/item/armor_module/storage/general/som,
-		/obj/item/armor_module/storage/engineering/som,
-		/obj/item/armor_module/storage/medical/som,
-		/obj/item/armor_module/storage/injector,
-		/obj/item/armor_module/storage/grenade,
-		/obj/item/armor_module/storage/integrated,
-		/obj/item/armor_module/armor/badge,
-	)
-
 	allowed_uniform_type = /obj/item/clothing/under/marine/robotic
 
-	flags_item_map_variant = ITEM_JUNGLE_VARIANT|ITEM_ICE_VARIANT|ITEM_DESERT_VARIANT
+	item_map_variant_flags = ITEM_JUNGLE_VARIANT|ITEM_ICE_VARIANT|ITEM_DESERT_VARIANT
+
+/obj/item/clothing/suit/modular/robot/generate_attachments_allowed()
+	attachments_allowed = general_list_of_marine_modules.Copy()
+	attachments_allowed -= list( // useless for robots modules
+		/obj/item/armor_module/module/valkyrie_autodoc,
+		/obj/item/armor_module/module/mimir_environment_protection,
+		/obj/item/armor_module/module/mimir_environment_protection/mark1,
+		/obj/item/armor_module/module/chemsystem,
+	)
 
 /obj/item/clothing/suit/modular/robot/mob_can_equip(mob/user, slot, warning = TRUE, override_nodrop = FALSE, bitslot = FALSE)
 	. = ..()
 	if(!isrobot(user))
 		to_chat(user, span_warning("You can't equip this as it requires mounting bolts on your body!"))
 		return FALSE
+
+//---- Medium armor with attachments
+/obj/item/clothing/suit/modular/robot/hodgrenades
+	starting_attachments = list(
+		/obj/item/armor_module/module/ballistic_armor,
+		/obj/item/armor_module/storage/grenade,
+	)
+
+/obj/item/clothing/suit/modular/robot/lightgeneral
+	starting_attachments = list(
+		/obj/item/armor_module/module/better_shoulder_lamp,
+		/obj/item/armor_module/storage/general,
+	)
+
+/obj/item/clothing/suit/modular/robot/lightengineer
+	starting_attachments = list(
+		/obj/item/armor_module/module/better_shoulder_lamp,
+		/obj/item/armor_module/storage/engineering,
+	)
+
+/obj/item/clothing/suit/modular/robot/lightinjector
+	starting_attachments = list(
+		/obj/item/armor_module/module/better_shoulder_lamp,
+		/obj/item/armor_module/storage/injector,
+	)
+
+/obj/item/clothing/suit/modular/robot/svalinn
+	starting_attachments = list(
+		/obj/item/armor_module/module/eshield,
+		/obj/item/armor_module/storage/general,
+	)
 
 /obj/item/clothing/suit/modular/robot/light
 	name = "XR-1-L armor plating"
@@ -54,12 +72,38 @@
 	slowdown = SLOWDOWN_ARMOR_VERY_LIGHT
 	greyscale_config = /datum/greyscale_config/robot/light
 
+//---- Light armor with attachments
+/obj/item/clothing/suit/modular/robot/light/baldur_medical
+	starting_attachments = list(
+		/obj/item/armor_module/module/better_shoulder_lamp,
+		/obj/item/armor_module/storage/medical,
+	)
+
+/obj/item/clothing/suit/modular/robot/light/baldur_general
+	starting_attachments = list(
+		/obj/item/armor_module/module/better_shoulder_lamp,
+		/obj/item/armor_module/storage/general,
+	)
+
 /obj/item/clothing/suit/modular/robot/heavy
 	name = "XR-1-H armor plating"
 	desc = "Heavy armor plating designed for self mounting on TerraGov combat robotics. It has self-sealing bolts for mounting on robotic owners inside."
 	soft_armor = MARINE_ARMOR_HEAVY
 	slowdown = SLOWDOWN_ARMOR_HEAVY
 	greyscale_config = /datum/greyscale_config/robot/heavy
+
+//---- Heavy armor with attachments
+/obj/item/clothing/suit/modular/robot/heavy/tyr_onegeneral
+	starting_attachments = list(
+		/obj/item/armor_module/module/tyr_extra_armor/mark1,
+		/obj/item/armor_module/storage/general,
+	)
+
+/obj/item/clothing/suit/modular/robot/heavy/lightengineer
+	starting_attachments = list(
+		/obj/item/armor_module/module/better_shoulder_lamp,
+		/obj/item/armor_module/storage/engineering,
+	)
 
 /obj/item/clothing/suit/modular/robot/heavy/tyr
 	starting_attachments = list(
@@ -77,15 +121,15 @@
 /obj/item/clothing/head/modular/robot
 	name = "XN-1 upper armor plating"
 	desc = "Medium armor plating designed for self mounting on the upper half of TerraGov combat robotics. It has self-sealing bolts for mounting on robotic owners inside."
-	item_icons = list(
-		slot_l_hand_str = 'icons/mob/items_lefthand_1.dmi',
-		slot_r_hand_str = 'icons/mob/items_righthand_1.dmi',
+	worn_icon_list = list(
+		slot_l_hand_str = 'icons/mob/inhands/items_lefthand_1.dmi',
+		slot_r_hand_str = 'icons/mob/inhands/items_righthand_1.dmi',
 	)
 	icon_state = "helmet"
-	item_state = "helmet"
+	worn_icon_state = "helmet"
 	species_exception = list(/datum/species/robot)
-	flags_item_map_variant = (ITEM_JUNGLE_VARIANT|ITEM_ICE_VARIANT|ITEM_PRISON_VARIANT)
-	soft_armor = list(MELEE = 50, BULLET = 70, LASER = 70, ENERGY = 60, BOMB = 55, BIO = 55, FIRE = 55, ACID = 60)
+	item_map_variant_flags = (ITEM_JUNGLE_VARIANT|ITEM_ICE_VARIANT|ITEM_PRISON_VARIANT)
+	soft_armor = MARINE_ARMOR_HEAVY
 
 	colorable_colors = ARMOR_PALETTES_LIST
 	colorable_allowed = PRESET_COLORS_ALLOWED
@@ -110,8 +154,7 @@
 		/obj/item/armor_module/armor/visor/marine/robot/heavy,
 	)
 	starting_attachments = list(/obj/item/armor_module/storage/helmet, /obj/item/armor_module/armor/visor/marine/robot)
-	flags_item_map_variant = ITEM_JUNGLE_VARIANT|ITEM_ICE_VARIANT|ITEM_DESERT_VARIANT
-
+	item_map_variant_flags = ITEM_JUNGLE_VARIANT|ITEM_ICE_VARIANT|ITEM_DESERT_VARIANT
 
 /obj/item/clothing/head/modular/robot/mob_can_equip(mob/user, slot, warning = TRUE, override_nodrop = FALSE, bitslot = FALSE)
 	. = ..()
@@ -119,27 +162,40 @@
 		to_chat(user, span_warning("You can't equip this as it requires mounting bolts on your body!"))
 		return FALSE
 
+//---- Medium helmets with attachments
+/obj/item/clothing/head/modular/robot/hod
+	starting_attachments = list(/obj/item/armor_module/storage/helmet, /obj/item/armor_module/armor/visor/marine/robot, /obj/item/armor_module/module/hod_head)
+
+/obj/item/clothing/head/modular/robot/antenna
+	starting_attachments = list(/obj/item/armor_module/storage/helmet, /obj/item/armor_module/armor/visor/marine/robot/heavy, /obj/item/armor_module/module/antenna)
+
+/obj/item/clothing/head/modular/robot/motion_detector
+	starting_attachments = list(/obj/item/armor_module/storage/helmet, /obj/item/armor_module/armor/visor/marine/robot/heavy, /obj/item/armor_module/module/motion_detector)
+
 /obj/item/clothing/head/modular/robot/light
 	name = "XN-1-L upper armor plating"
 	desc = "Light armor plating designed for self mounting on the upper half of TerraGov combat robotics. It has self-sealing bolts for mounting on robotic owners inside."
 	starting_attachments = list(/obj/item/armor_module/storage/helmet, /obj/item/armor_module/armor/visor/marine/robot/light)
-	soft_armor = list(MELEE = 40, BULLET = 55, LASER = 55, ENERGY = 50, BOMB = 40, BIO = 45, FIRE = 45, ACID = 50)
+	soft_armor = MARINE_ARMOR_HEAVY
 	greyscale_config = /datum/greyscale_config/robot/light
+
+/obj/item/clothing/head/modular/robot/light/motion_detector
+	starting_attachments = list(/obj/item/armor_module/storage/helmet, /obj/item/armor_module/armor/visor/marine/robot/light, /obj/item/armor_module/module/motion_detector)
 
 /obj/item/clothing/head/modular/robot/heavy
 	name = "XN-1-H upper armor plating"
 	desc = "Heavy armor plating designed for self mounting on the upper half of TerraGov combat robotics. It has self-sealing bolts for mounting on robotic owners inside."
 	starting_attachments = list(/obj/item/armor_module/storage/helmet, /obj/item/armor_module/armor/visor/marine/robot/heavy)
-	soft_armor = list(MELEE = 55, BULLET = 70, LASER = 70, ENERGY = 55, BOMB = 50, BIO = 50, FIRE = 50, ACID = 55)
+	soft_armor = MARINE_ARMOR_HEAVY
 	greyscale_config = /datum/greyscale_config/robot/heavy
 
 /obj/item/clothing/head/modular/robot/heavy/tyr
 	starting_attachments = list(/obj/item/armor_module/storage/helmet, /obj/item/armor_module/armor/visor/marine/robot/heavy, /obj/item/armor_module/module/tyr_head)
 
 /obj/item/clothing/head/helmet/marine/robot/advanced
-	flags_item_map_variant = NONE
+	item_map_variant_flags = NONE
 	icon = 'icons/obj/clothing/headwear/marine_helmets.dmi'
-	item_icons = list(
+	worn_icon_list = list(
 		slot_head_str = 'icons/mob/clothing/headwear/robot_helmets.dmi',
 	)
 	species_exception = list(/datum/species/robot)
@@ -151,9 +207,9 @@
 		return FALSE
 
 /obj/item/clothing/suit/storage/marine/robot/advanced
-	flags_item_map_variant = NONE
+	item_map_variant_flags = NONE
 	icon = 'icons/obj/clothing/suits/marine_armor.dmi'
-	item_icons = list(
+	worn_icon_list = list(
 		slot_wear_suit_str = 'icons/mob/clothing/suits/robot_armor.dmi',
 	)
 	species_exception = list(/datum/species/robot)
@@ -169,7 +225,7 @@
 	desc = "Heavy armor plating designed for self mounting on the upper half of TerraGov combat robotics. It has self-sealing bolts for mounting on robotic owners inside. It was created for the survival of robots in places with high acid concentration. Uses the already known technology of nickel-gold plates to protect important modules in the upper part of the robot"
 	soft_armor = list(MELEE = 50, BULLET = 60, LASER = 65, ENERGY = 65, BOMB = 50, BIO = 65, FIRE = 40, ACID = 75)
 	icon_state = "robo_helm_acid"
-	item_state = "robo_helm_acid"
+	worn_icon_state = "robo_helm_acid"
 
 /obj/item/clothing/suit/storage/marine/robot/advanced/acid
 	name = "\improper Exidobate armor plating"
@@ -178,7 +234,7 @@
 	slowdown = 0.7
 
 	icon_state = "robo_armor_acid"
-	item_state = "robo_armor_acid"
+	worn_icon_state = "robo_armor_acid"
 
 /obj/item/clothing/head/helmet/marine/robot/advanced/physical
 	name = "\improper Cingulata upper armor plating"
@@ -186,7 +242,7 @@
 	soft_armor = list(MELEE = 75, BULLET = 80, LASER = 50, ENERGY = 50, BOMB = 50, BIO = 50, FIRE = 20, ACID = 50)
 
 	icon_state = "robo_helm_physical"
-	item_state = "robo_helm_physical"
+	worn_icon_state = "robo_helm_physical"
 
 /obj/item/clothing/suit/storage/marine/robot/advanced/physical
 	name = "\improper Cingulata armor plating"
@@ -195,7 +251,7 @@
 	slowdown = 0.7
 
 	icon_state = "robo_armor_physical"
-	item_state = "robo_armor_physical"
+	worn_icon_state = "robo_armor_physical"
 
 /obj/item/clothing/head/helmet/marine/robot/advanced/bomb
 	name = "\improper Tardigrada upper armor plating"
@@ -203,7 +259,7 @@
 	soft_armor = list(MELEE = 60, BULLET = 60, LASER = 50, ENERGY = 50, BOMB = 90, BIO = 50, FIRE = 20, ACID = 50)
 
 	icon_state = "robo_helm_bomb"
-	item_state = "robo_helm_bomb"
+	worn_icon_state = "robo_helm_bomb"
 
 /obj/item/clothing/suit/storage/marine/robot/advanced/bomb
 	name = "\improper Tardigrada armor plating"
@@ -212,7 +268,7 @@
 	slowdown = 0.7
 
 	icon_state = "robo_armor_bomb"
-	item_state = "robo_armor_bomb"
+	worn_icon_state = "robo_armor_bomb"
 
 /obj/item/clothing/head/helmet/marine/robot/advanced/fire
 	name = "\improper Urodela upper armor plating"
@@ -221,7 +277,7 @@
 	hard_armor = list(FIRE = 200)
 
 	icon_state = "robo_helm_fire"
-	item_state = "robo_helm_fire"
+	worn_icon_state = "robo_helm_fire"
 
 /obj/item/clothing/suit/storage/marine/robot/advanced/fire
 	name = "\improper Urodela armor plating"
@@ -231,4 +287,4 @@
 	slowdown = 0.5
 
 	icon_state = "robo_armor_fire"
-	item_state = "robo_armor_fire"
+	worn_icon_state = "robo_armor_fire"

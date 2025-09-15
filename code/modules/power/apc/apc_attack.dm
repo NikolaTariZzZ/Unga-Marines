@@ -6,7 +6,7 @@
 		X.do_attack_animation(src, ATTACK_EFFECT_CLAW)
 		X.visible_message(span_danger("[X] slashes \the [src]!"), \
 		span_danger("We slash \the [src]!"), null, 5)
-		playsound(loc, "alien_claw_metal", 25, 1)
+		playsound(loc, SFX_ALIEN_CLAW_METAL, 25, 1)
 
 	var/allcut = wires.is_all_cut()
 
@@ -28,6 +28,8 @@
 //Attack with an item - open/close cover, insert cell, or (un)lock interface //todo please clean this up
 /obj/machinery/power/apc/attackby(obj/item/I, mob/user, params)
 	. = ..()
+	if(.)
+		return
 
 	if(istype(I, /obj/item/cell) && opened) //Trying to put a cell inside
 		if(user.skills.getRating(SKILL_ENGINEER) < SKILL_ENGINEER_ENGI)

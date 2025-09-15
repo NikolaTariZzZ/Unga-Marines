@@ -9,24 +9,24 @@
 	icon_state = "t26"
 	w_class = WEIGHT_CLASS_NORMAL
 	max_rounds = 15
-	default_ammo = /datum/ammo/bullet/sniper
+	default_ammo = /datum/ammo/bullet/sniper/smart
 	reload_delay = 3
 	icon_state_mini = "mag_sniper"
-
+	ammo_band_icon = "t26_band"
 
 /obj/item/ammo_magazine/sniper/incendiary
 	name = "\improper SR-26 incendiary magazine (10x28mm)"
-	default_ammo = /datum/ammo/bullet/sniper/incendiary
-	icon_state = "t26_inc"
+	default_ammo = /datum/ammo/bullet/sniper/incendiary/smart
 	icon_state_mini = "mag_sniper_red"
 	bonus_overlay = "t26_incend"
+	ammo_band_color = AMMO_BAND_COLOR_INCENDIARY
 
 /obj/item/ammo_magazine/sniper/flak
 	name = "\improper SR-26 flak magazine (10x28mm)"
-	default_ammo = /datum/ammo/bullet/sniper/flak
-	icon_state = "t26_flak"
+	default_ammo = /datum/ammo/bullet/sniper/flak/smart
 	icon_state_mini = "mag_sniper_blue"
 	bonus_overlay = "t26_flak"
+	ammo_band_color = AMMO_BAND_COLOR_IMPACT
 
 //SR-42 magazine
 
@@ -56,30 +56,30 @@
 
 /obj/item/ammo_magazine/rifle/tx8
 	name = "\improper high velocity magazine (10x28mm)"
-	desc = "A magazine of overpressuered high velocity rounds for use in the BR-8 battle rifle. The BR-8 battle rifle is the only gun that can chamber these rounds."
+	desc = "A magazine of overpressured high velocity rounds for use in the BR-8 battle rifle. The BR-8 battle rifle is the only gun that can chamber these rounds."
 	icon_state = "tx8"
 	caliber = CALIBER_10X28_CASELESS
 	default_ammo = /datum/ammo/bullet/rifle/tx8
 	max_rounds = 25
 	icon_state_mini = "mag_rifle_big"
+	ammo_band_icon = "tx8_band"
 
 /obj/item/ammo_magazine/rifle/tx8/incendiary
 	name = "\improper high velocity incendiary magazine (10x28mm)"
-	desc = "A magazine of overpressuered high velocity incendiary rounds for use in the BR-8 battle rifle. The BR-8 battle rifle is the only gun that can chamber these rounds."
+	desc = "A magazine of overpressured high velocity incendiary rounds for use in the BR-8 battle rifle. The BR-8 battle rifle is the only gun that can chamber these rounds."
 	caliber = CALIBER_10X28_CASELESS
-	icon_state = "tx8_incend"
 	default_ammo = /datum/ammo/bullet/rifle/tx8/incendiary
 	icon_state_mini = "mag_rifle_big_red"
 	bonus_overlay = "tx8_incend"
+	ammo_band_color = AMMO_BAND_COLOR_INCENDIARY
 
 /obj/item/ammo_magazine/rifle/tx8/impact
 	name = "\improper high velocity impact magazine (10x28mm)"
-	desc = "A magazine of overpressuered high velocity impact rounds for use in the BR-8 battle rifle. The BR-8 battle rifle is the only gun that can chamber these rounds."
-	icon_state = "tx8_impact"
+	desc = "A magazine of overpressured high velocity impact rounds for use in the BR-8 battle rifle. The BR-8 battle rifle is the only gun that can chamber these rounds."
 	default_ammo = /datum/ammo/bullet/rifle/tx8/impact
 	icon_state_mini = "mag_rifle_big_blue"
 	bonus_overlay = "tx8_impact"
-
+	ammo_band_color = AMMO_BAND_COLOR_IMPACT
 
 //-------------------------------------------------------
 //M5 RPG
@@ -88,9 +88,10 @@
 	name = "\improper generic high-explosive rocket"
 	desc = "A precursor to all kinds of rocket ammo unfit for normal use. How did you get this anyway?"
 	caliber = CALIBER_84MM
+	icon = 'icons/obj/items/ammo/rocket.dmi'
 	icon_state = "rocket"
 	w_class = WEIGHT_CLASS_NORMAL
-	flags_magazine = MAGAZINE_REFUND_IN_CHAMBER
+	magazine_flags = MAGAZINE_REFUND_IN_CHAMBER
 	max_rounds = 1
 	default_ammo = /datum/ammo/rocket
 	reload_delay = 60
@@ -148,7 +149,7 @@
 
 /obj/item/ammo_magazine/rocket/sadar/ap
 	name = "\improper 84mm 'L-G' anti-armor rocket"
-	desc = "A tube for an AP rocket, the warhead of which inside is a missile assisted kinetic penetrator that will devastate just about anything that it hits internally, but will do nothing to the surrounding armor. When empty, use this frame to deconstruct it."
+	desc = "A tube for an AP rocket, the warhead of which inside is a missile assisted kinetic penetrator that will devastate just about anything that it hits internally, destroying it's armor in the process. When empty, use this frame to deconstruct it."
 	icon_state = "rocket_ap"
 	default_ammo = /datum/ammo/rocket/ap
 	bonus_overlay = "rocket_ap"
@@ -174,7 +175,7 @@
 	desc = "A high explosive shell for the RL-160 recoilless rifle. Causes a heavy explosion over a small area. Requires specialized storage to carry."
 	caliber = CALIBER_67MM
 	icon_state = "shell"
-	w_class = WEIGHT_CLASS_BULKY
+	w_class = WEIGHT_CLASS_NORMAL
 	max_rounds = 1
 	default_ammo = /datum/ammo/rocket/recoilless
 	reload_delay = 30
@@ -195,13 +196,13 @@
 
 /obj/item/ammo_magazine/rocket/recoilless/heat
 	name = "\improper 67mm HEAT shell"
-	desc = "A high explosive-anti tank shell for the RL-160 recoilless rifle. Fires a penetrating shot with no explosion. It will do moderate damage to all types of enemies, but does not sunder their armor. Requires specialized storage to carry."
+	desc = "A high explosive-anti tank shell for the RL-160 recoilless rifle. Fires a penetrating shot with no explosion. It will do moderate damage to all types of enemies, sundering their armor. Requires specialized storage to carry."
 	icon_state = "shell_heat"
 	default_ammo = /datum/ammo/rocket/recoilless/heat
 
 /obj/item/ammo_magazine/rocket/recoilless/heam
 	name = "\improper 67mm HEAM shell"
-	desc = "A high explosive-anti mechg shell for the RL-160 recoilless rifle. Fires a penetrating shot designed specifically to penetrate mech armor, but suffers from poor accuracy against other targets. Requires specialized storage to carry."
+	desc = "A high explosive-anti mech shell for the RL-160 recoilless rifle. Fires a penetrating shot designed specifically to penetrate mech armor, but suffers from poor accuracy against other targets. Requires specialized storage to carry."
 	icon_state = "shell_heat"
 	default_ammo = /datum/ammo/rocket/recoilless/heat/mech
 
@@ -308,7 +309,7 @@
 	bonus_overlay = "rpg_thermobaric"
 
 /obj/item/ammo_magazine/rocket/som/rad
-	name = "\improper 84mm  irrad RPG"
+	name = "\improper 84mm irrad RPG"
 	desc = "A irrad warhead for the V-71 rocket launcher. Releases a devastating milisecond burst of radiation, debilitating anything caught in the blast radius."
 	icon_state = "rpg_rad"
 	default_ammo = /datum/ammo/rocket/som/rad
@@ -352,12 +353,37 @@
 	default_ammo = /datum/ammo/rocket/som/thermobaric
 	bonus_overlay = "iccrpg_thermobaric"
 
+//VSD RPG
+
+/obj/item/ammo_magazine/rocket/vsd/he
+	name = "\improper 84mm HE 'Anti-Personnel' case"
+	desc = "84mm Anti Personnel case. The label reads: 'Makes big boom'."
+	icon_state = "c153_he"
+	default_ammo = /datum/ammo/rocket/som
+	reload_delay = 2 SECONDS
+	bonus_overlay = "c153_he"
+
+/obj/item/ammo_magazine/rocket/vsd/incendiary
+	name = "\improper 84mm Incendiary 'Anti-Personnel' case"
+	desc = "84mm Incendiary Anti Personnel case. The label reads: 'Makes people go AAAAAAAHH'."
+	icon_state = "c153_incendiary"
+	default_ammo = /datum/ammo/rocket/wp/quad/som
+	bonus_overlay = "c153_incendiary"
+
+/obj/item/ammo_magazine/rocket/vsd/chemical
+	name = "\improper 84mm Chemical-Warhead 'Anti-Personnel' case"
+	desc = "Chemical Capped 84mm Anti Personnel case. The label reads: 'Makes people fucking die'."
+	icon_state = "c153_chemical"
+	default_ammo = /datum/ammo/rocket/recoilless/chemical/harmgas/vsd
+	bonus_overlay = "c153_chemical"
+
 // railgun
 
 /obj/item/ammo_magazine/railgun
 	name = "railgun canister (Armor Piercing Discarding Sabot)"
-	desc = "A canister holding a tungsten projectile to be used inside a railgun. APDS is written across the canister, this round will penetrate through most armor, but will not leave much of a hole."
+	desc = "A canister holding a tungsten projectile to be used inside a railgun. APDS is written across the canister. This round will penetrate through most armor, but will not leave much of a hole."
 	caliber = CALIBER_RAILGUN
+	icon = 'icons/obj/items/ammo/misc.dmi'
 	icon_state = "railgun"
 	default_ammo = /datum/ammo/bullet/railgun
 	max_rounds = 3
@@ -385,6 +411,7 @@
 	name = "pepperball canister (SAN balls)"
 	desc = "A canister holding a projectile to be used inside a pepperball gun."
 	caliber = CALIBER_PEPPERBALL
+	icon = 'icons/obj/items/ammo/misc.dmi'
 	icon_state = "pepperball"
 	default_ammo = /datum/ammo/bullet/pepperball
 	max_rounds = 100
@@ -401,41 +428,55 @@
 
 /obj/item/ammo_magazine/minigun_powerpack
 	name = "\improper MG-100 Vindicator powerpack"
-	desc = "A heavy reinforced backpack with support equipment, power cells, and spare rounds for the MG-100 Minigun System.\nClick the icon in the top left to reload your M56."
-	icon = 'icons/obj/items/storage/storage.dmi'
+	desc = "A heavy reinforced backpack with support equipment, power cells, and spare rounds for the MG-100 minigun system.\nClick the icon in the top left to reload your MG-100."
+	icon = 'icons/obj/items/ammo/powerpack.dmi'
 	icon_state = "powerpack"
-	flags_atom = CONDUCT
-	flags_equip_slot = ITEM_SLOT_BACK
-	flags_magazine = MAGAZINE_WORN
+	atom_flags = CONDUCT
+	equip_slot_flags = ITEM_SLOT_BACK
+	magazine_flags = MAGAZINE_WORN
 	w_class = WEIGHT_CLASS_HUGE
 	default_ammo = /datum/ammo/bullet/minigun
 	current_rounds = 600
 	max_rounds = 600
-	flags_item_map_variant = (ITEM_JUNGLE_VARIANT|ITEM_ICE_VARIANT|ITEM_PRISON_VARIANT)
+	item_map_variant_flags = (ITEM_JUNGLE_VARIANT|ITEM_ICE_VARIANT|ITEM_PRISON_VARIANT)
 
 /obj/item/ammo_magazine/minigun_powerpack/snow
 	icon_state = "s_powerpack"
-	flags_item_map_variant = null
+	item_map_variant_flags = null
 
 /obj/item/ammo_magazine/minigun_powerpack/fancy
 	icon_state = "powerpackw"
-	flags_item_map_variant = null
+	item_map_variant_flags = null
 
 /obj/item/ammo_magazine/minigun_powerpack/merc
 	icon_state = "powerpackp"
-	flags_item_map_variant = null
+	item_map_variant_flags = null
 
 /obj/item/ammo_magazine/minigun_powerpack/smartgun
 	name = "\improper SG-85 powerpack"
 	desc = "A reinforced backpack heavy with the IFF altered ammunition, onboard micro generator, and extensive cooling system which enables the SG-85 gatling gun to operate. \nUse the SG-85 on the backpack itself to connect them."
 	icon_state = "powerpacksg"
-	flags_magazine = MAGAZINE_WORN|MAGAZINE_REFILLABLE
+	magazine_flags = MAGAZINE_WORN|MAGAZINE_REFILLABLE
 	default_ammo = /datum/ammo/bullet/smart_minigun
-	current_rounds = 2000
-	max_rounds = 2000
-	caliber = CALIBER_10x26_CASELESS
-	flags_item_map_variant = null
+	current_rounds = 1000
+	max_rounds = 1000
+	caliber = CALIBER_10X26_CASELESS
+	item_map_variant_flags = null
 
+//"External magazine" for the wheelchair-mounted minigun
+/obj/item/ammo_magazine/minigun_wheelchair
+	name = "\improper Mounted MG-100 Vindicator ammo rack"
+	desc = "A case filled to the brim with ammunition. Appears custom made to be slotted into a feeding system."
+	icon = 'icons/obj/items/ammo/stationary.dmi'
+	icon_state = "minigun"
+	atom_flags = CONDUCT
+	magazine_flags = MAGAZINE_REFILLABLE
+	equip_slot_flags = ITEM_SLOT_BACK
+	w_class = WEIGHT_CLASS_HUGE
+	default_ammo = /datum/ammo/bullet/minigun
+	current_rounds = 1000
+	max_rounds = 1000
+	reload_delay = 0.75 SECONDS
 
 // ICC coilgun
 
@@ -448,4 +489,3 @@
 	max_rounds = 5
 	reload_delay = 10
 	icon_state_mini = "mag_dmr"
-

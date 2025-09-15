@@ -13,87 +13,143 @@
 /obj/item/weapon/gun/get_mechanics_info()
 	. = ..()
 	var/list/traits = list()
+	traits += "----------------------------------------------------------"
 
-	if(flags_gun_features & GUN_WIELDED_FIRING_ONLY)
-		traits += "This can only be fired with a two-handed grip."
-	else
-		traits += "It's best fired with a two-handed grip."
-
-
-	if(HAS_TRAIT(src, TRAIT_GUN_SAFETY))
-		traits += "It has a safety switch. Alt-Click it to toggle safety."
-
-	if(scope_zoom) //flawed, unless you check the codex for the first time when the scope is attached, this won't show. works for sniper rifles though.
-		traits += "It has a magnifying optical scope. It can be toggled with Use Scope verb."
-
-	if(burst_amount > 2)
-		traits += "It has multiple firemodes. Click the Toggle Burst Fire button to change it."
-
-
-	traits += "<br>Caliber: [caliber]"
-
+	traits += "Caliber: [caliber]"
+	if(gun_features_flags & GUN_WIELDED_FIRING_ONLY)
+		traits += "Can only be fired with a two-handed grip."
+	if(burst_amount > 1)
+		traits += "Can fire in short bursts."
 	if(max_shells)
-		traits += "It can normally hold [max_shells] rounds."
-
+		traits += "Normally holds [max_shells] rounds."
 	if(max_shots)
 		traits += "Its maximum capacity is normally [max_shots] shots worth of power."
 
 	var/list/loading_ways = list()
 	if(load_method & SINGLE_CASING)
-		loading_ways += "loose [caliber] rounds."
+		loading_ways += "loose [caliber] rounds"
 	if(load_method & SPEEDLOADER)
-		loading_ways += "speedloaders."
+		loading_ways += "speedloaders"
 	if(load_method & MAGAZINE)
-		loading_ways += "magazines."
+		loading_ways += "magazines"
 	if(load_method & CELL)
-		loading_ways += "cells."
+		loading_ways += "cells"
 	if(load_method & POWERPACK)
-		loading_ways += "it's powerpack."
-	traits += "Can be loaded using [english_list(loading_ways)]"
+		loading_ways += "it's powerpack"
+	traits += "Can be loaded using: [english_list(loading_ways)]:"
 
-	if(attachable_allowed)
-		traits += "<br><U>You can attach</U>:"
-		for(var/X in attachable_allowed)
-			var/obj/item/attachable/A = X
-			traits += "[initial(A.name)]"
+	if(allowed_ammo_types)
+		for(var/i in allowed_ammo_types)
+			var/obj/item/ammo_magazine/mag = i
+			if(!mag.default_ammo)	//no ammo in mag - just print the name, otherwise add stats
+				traits += mag.name
+				continue
 
-	traits += "<br><U>Basic Statistics for this weapon are as follows</U>:"
-	if(w_class)
-		traits += "Size: [w_class]"
-	if(force)
-		traits += "Base melee damage: [force]"
-	if(accuracy_mult)
-		traits += "Accuracy: [((accuracy_mult - 1) * 100) > 0 ? "+[(accuracy_mult - 1) * 100]" : "[(accuracy_mult - 1) * 100]"]%"
-	if(damage_mult)
-		traits += "Damage modifier: [((damage_mult - 1) * 100) > 0 ? "+[(damage_mult - 1) * 100]" : "[(damage_mult - 1) * 100]"]%"
-	if(damage_falloff_mult)
-		traits += "Damage falloff: -[damage_falloff_mult] per tile travelled."
-	if(recoil)
-		traits += "Recoil: [recoil]"
-	if(scatter)
-		traits += "Scatter angle: [scatter]"
-	if(burst_scatter_mult)
-		traits += "Burst scatter angle multiplier: x[burst_scatter_mult]"
-	if(accuracy_mult_unwielded)
-		traits += "Accuracy unwielded modifier: [((accuracy_mult_unwielded - 1) * 100) > 0 ? "+[(accuracy_mult_unwielded - 1) * 100]" : "[(accuracy_mult_unwielded - 1) * 100]"]%"
-	if(recoil_unwielded)
-		traits += "Recoil Unwielded: [recoil_unwielded]"
-	if(scatter_unwielded)
-		traits += "Unwielded Scatter angle: [scatter_unwielded > 0 ? "+[scatter_unwielded]" : "[scatter_unwielded]"]"
-	if(movement_acc_penalty_mult)
-		traits += "Movement unwielded penalty modifier: -[(movement_acc_penalty_mult * 0.15) * 100]%"
+			var/datum/ammo/bullet/def_ammo = mag.default_ammo
+			if(!mag.default_ammo.damage)
+				continue
+			var/damage_text = "DMG:[def_ammo.damage]"
+			if(def_ammo.bonus_projectiles_amount > 0)
+				damage_text += "x[def_ammo.bonus_projectiles_amount]"
+			var/ap_text = "AP:[def_ammo.penetration+def_ammo.additional_xeno_penetration]"
+			var/falloff_text = "FLF:-[def_ammo.damage_falloff]/tile"
+			var/size_text = "AMMO: [mag.max_rounds]"
+			traits += mag.name
+			traits += "-> [damage_text], [ap_text], [falloff_text], [size_text]"
+
+	if(load_method & SINGLE_CASING)
+		//check is done based on caliber only
+		for (var/i in typesof(/obj/item/ammo_magazine/handful))
+			var/obj/item/ammo_magazine/handful/mag = i
+			if(mag.caliber != caliber)
+				continue
+			if(!mag.default_ammo)	//no ammo in mag - just print the name, otherwise add stats
+				traits += mag.name
+				continue
+
+			var/datum/ammo/bullet/def_ammo = mag.default_ammo
+			if(!mag.default_ammo.damage)
+				continue
+			var/damage_text = "DMG:[def_ammo.damage]"
+			if(def_ammo.bonus_projectiles_amount > 0)
+				damage_text += "x[def_ammo.bonus_projectiles_amount]"
+			var/ap_text = "AP:[def_ammo.penetration+def_ammo.additional_xeno_penetration]"
+			var/falloff_text = "FLF:-[def_ammo.damage_falloff]/tile"
+			traits += def_ammo.name
+			traits += "-> [damage_text], [ap_text], [falloff_text]"
+
+	traits += "Examine the ammo holders or ammunition for more info."
+
+	traits += "----------------------------------------------------------"
 	if(fire_delay)
 		traits += "Time between single-fire: [fire_delay * 0.1] seconds"
-	if(wield_delay)
-		traits += "Wield delay: [wield_delay * 0.1] seconds"
 	if(burst_amount > 1)
 		traits += "Shots fired on burst mode: [burst_amount]"
-		traits += "Time between burst-fire: [(min((burst_delay * 2), (fire_delay * 3))) * 0.1] seconds"
+		traits += "Time between bursts: [((burst_amount-1)*burst_delay + fire_delay + extra_delay) * 0.1] seconds"
 	if(/datum/action/item_action/aim_mode in actions_types)
 		traits += "Can be aimed with to shoot past allies."
 		traits += "Time between aimed shots: [(fire_delay + aim_fire_delay) * 0.1] seconds"
+	if(wield_delay)
+		traits += "Wield delay: [wield_delay * 0.1] seconds"
+	if(force)
+		traits += "Melee damage: [force]"
+	if(damage_mult <> 1)
+		traits += "Damage multiplier: x[damage_mult]"
+	if(damage_falloff_mult <> 1)
+		traits += "Damage falloff multiplier: x[damage_falloff_mult]"
+	if(accuracy_mult <> 1)
+		traits += "Accuracy multiplier: x[accuracy_mult]"
+	if(accuracy_mult_unwielded)
+		traits += "Accuracy unwielded multiplier: x[accuracy_mult_unwielded]"
+	if(movement_acc_penalty_mult)
+		traits += "Moving accuracy (flat malus): -[(movement_acc_penalty_mult * 3)]%"
+	if(recoil)
+		traits += "Recoil: [recoil]"
+	if(recoil_unwielded)
+		traits += "Recoil unwielded: [recoil_unwielded]"
+	if(scatter)
+		traits += "Scatter angle: [scatter]"
+	if(scatter_unwielded)
+		traits += "Unwielded scatter angle: [scatter_unwielded]"
+	if(burst_scatter_mult <> 1)
+		traits += "Burst scatter angle multiplier: x[burst_scatter_mult]"
 
-	traits += "<br>"
+	traits += "----------------------------------------------------------"
+	if(attachable_allowed)
+		var/list/attachments_header_text = list(
+			ATTACHMENT_SLOT_RAIL = "<U>Rail attachments:</U>",
+			ATTACHMENT_SLOT_UNDER = "<U>Handguard attachments:</U>",
+			ATTACHMENT_SLOT_MUZZLE = "<U>Muzzle attachments:</U>",
+			ATTACHMENT_SLOT_STOCK = "<U>Stock attachments:</U>",
+			ATTACHMENT_BARREL_MOD = "<U>Barrel attachments:</U>",
+			"other" = "<U>Other attachments:</U>"
+		)
+		var/list/attachments_text = list(
+			ATTACHMENT_SLOT_RAIL = list(),
+			ATTACHMENT_SLOT_UNDER = list(),
+			ATTACHMENT_SLOT_MUZZLE = list(),
+			ATTACHMENT_SLOT_STOCK = list(),
+			ATTACHMENT_BARREL_MOD = list(),
+			"other" = list()
+		)
+
+		for(var/att in attachable_allowed)
+			var/obj/item/attachable/A = att
+			if(A.slot in attachments_text)
+				attachments_text[A.slot] += A.name
+			else
+				attachments_text["other"] += A.name
+		for(var/i in attachments_text)
+			var/list/attach_list_of_type = attachments_text[i]
+			if(length(attach_list_of_type) <= 0)
+				continue
+
+			traits += attachments_header_text[i]
+			attachments_text[i] = sortList(attachments_text[i])
+			traits += attachments_text[i]
+
+	traits += "----------------------------------------------------------"
+	traits += "How to use:<br>"
 	var/list/entries = SScodex.retrieve_entries_for_string(general_codex_key)
 	var/datum/codex_entry/general_entry = LAZYACCESS(entries, 1)
 	if(general_entry?.mechanics_text)
@@ -146,6 +202,16 @@
 		traditional chargers and their capability to switch their lens, allowing more flexibility, something that a ballistic weapon \
 		aren't capable of."
 
+/datum/codex_entry/plasma_weapons
+	display_name = "plasma weapons"
+	mechanics_text = "This weapon is a plasma weapon; it fires bursts of superheated gas that have been ionized and electrically charged. You can \
+		unload it by holding it and clicking it with an empty hand, and reload it by clicking it with a power cell or a plasma cartridge, depending on the model of \
+		the weapon. \
+		<br>"
+	lore_text = "Plasma weapons are rare and powerful due to the high cost and difficulty of producing and controlling plasma \
+		pulses. They have a devastating effect on most targets, as the plasma can melt, burn, or vaporize them. Using a plasma weapon in a confined space is very risky, \
+		as the plasma can damage the surroundings or harm friendly units with its intense heat and radiation."
+
 /datum/codex_entry/ballistic_weapons
 	display_name = "ballistic weapons"
 	mechanics_text = "This weapon is a ballistic weapon; it fires solid shots using a magazine or loaded rounds of ammunition. You can \
@@ -185,16 +251,16 @@
 /datum/codex_entry/sniper_rifle
 	associated_paths = list(/obj/item/weapon/gun/rifle/sniper/antimaterial)
 	lore_text = "A rather strange gun in the TGMC's arsenal. The M42A \"Express\" originally was born out of it's younger brother the M42. Made by the same \
-	company who eventually went on to design the M56 smartgun system. Which the M42As specialized scope eventually adopted a modified IFF system similar to it's cousin the smartgun. <br><br>\
+	company who eventually went on to design the HSG-102 smartgun system. Which the M42As specialized scope eventually adopted a modified IFF system similar to it's cousin the smartgun. <br><br>\
 	It was at first marketed to PMCs and civilians as an expensive accurate long range rifle but it failed due to the lack of need for such a thing for PMCs and the wide variety of options \
-	already available for civilians in a more affordable package. The company after the failure went onto design the M56 smartgun and succeeded there however. Which kept them afloat after the failure of the M42.<br><br>\
+	already available for civilians in a more affordable package. The company after the failure went onto design the HS-102 smartgun and succeeded there however. Which kept them afloat after the failure of the M42.<br><br>\
 	Later however an announcement by the Marine Corps who decided to replace the aging supply of the current adopted Sniper Rifle after complaints that the frames were starting to wear out due to long-term use and thus trials would be announced to replace them.<br><br>\
 	Eventually, the board of directors decided to give that reviving the M42 design was a worthwhile possibility. And thus the design was decided to be modernized and equipped with an IFF-capable scope, after that it was named as the M42A and submitted to go the trials.<br><br>\
 	Though high unit cost didn't allow it to be more widely adopted it was eventually decided that it would meet limited adoption for Marksmen and be designated the SR-26."
 
 /datum/codex_entry/tx8
 	associated_paths = list(/obj/item/weapon/gun/rifle/tx8)
-	lore_text = "The M45A was born from a commission order from the TGMC to the company which made the M42A and M56 smartgun systems. <br><br>\
+	lore_text = "The M45A was born from a commission order from the TGMC to the company which made the M42A and HS-102 smartgun systems. <br><br>\
 	The reason for this commission order resulted from complaints from light infantry and scout units about the poor accuracy of the new SR-26 \
 	carbine at longer ranges and the large size of the SG-29 making close combat uncomfortable eventually reached the higher ups, who kept getting \
 	the same complaints over and over. So they eventually reached out to a trusted company to do it.<br><br>\

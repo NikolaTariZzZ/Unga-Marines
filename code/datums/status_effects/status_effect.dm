@@ -51,12 +51,12 @@
 		owner = null
 	return ..()
 
-/datum/status_effect/process()
+/datum/status_effect/process(delta_time)
 	if(!owner)
 		qdel(src)
 		return
 	if(tick_interval < world.time)
-		tick()
+		tick(delta_time)
 		tick_interval = world.time + initial(tick_interval)
 	if(duration != -1 && duration < world.time)
 		qdel(src)
@@ -66,7 +66,7 @@
 	return TRUE
 
 ///Called every tick
-/datum/status_effect/proc/tick()
+/datum/status_effect/proc/tick(delta_time)
 
 //Called whenever the buff expires or is removed; do note that at the point this is called, it is out of the owner's status_effects but owner is not yet null
 /datum/status_effect/proc/on_remove()
@@ -107,14 +107,17 @@
 	var/datum/status_effect/S1 = effect
 	LAZYINITLIST(status_effects)
 	for(var/datum/status_effect/S in status_effects)
-		if(S.id == initial(S1.id) && S.status_type)
-			if(S.status_type == STATUS_EFFECT_REPLACE)
-				qdel(S)
-			else if(S.status_type == STATUS_EFFECT_REFRESH)
-				S.refresh()
-				return
-			else
-				return
+		if(S.id != initial(S1.id))
+			continue
+		if(!S.status_type)
+			continue
+		if(S.status_type == STATUS_EFFECT_REPLACE)
+			qdel(S)
+		else if(S.status_type == STATUS_EFFECT_REFRESH)
+			S.refresh()
+			return
+		else
+			return
 	var/list/arguments = args.Copy()
 	arguments[1] = src
 	S1 = new effect(arguments)
@@ -125,25 +128,28 @@
 	if(status_effects)
 		var/datum/status_effect/S1 = effect
 		for(var/datum/status_effect/S in status_effects)
-			if(initial(S1.id) == S.id)
-				qdel(S)
-				. = TRUE
+			if(initial(S1.id) != S.id)
+				continue
+			qdel(S)
+			. = TRUE
 
 /mob/living/proc/has_status_effect(effect) //returns the effect if the mob calling the proc owns the given status effect
 	. = FALSE
 	if(status_effects)
 		var/datum/status_effect/S1 = effect
 		for(var/datum/status_effect/S in status_effects)
-			if(initial(S1.id) == S.id)
-				return S
+			if(initial(S1.id) != S.id)
+				continue
+			return S
 
 /mob/living/proc/has_status_effect_list(effect) //returns a list of effects with matching IDs that the mod owns; use for effects there can be multiple of
 	. = list()
 	if(status_effects)
 		var/datum/status_effect/S1 = effect
 		for(var/datum/status_effect/S in status_effects)
-			if(initial(S1.id) == S.id)
-				. += S
+			if(initial(S1.id) != S.id)
+				continue
+			. += S
 
 /mob/living/proc/remove_all_status_effect()
 	. = 0
@@ -213,7 +219,7 @@
 /datum/status_effect/stacking/proc/can_gain_stacks()
 	return owner.stat != DEAD
 
-/datum/status_effect/stacking/tick()
+/datum/status_effect/stacking/tick(delta_time)
 	if(!can_have_status())
 		qdel(src)
 	else

@@ -22,6 +22,7 @@
 	var/list/environment_traits = list()
 	///Which disk sets this map has, key-value = name - weight for choosing.
 	var/list/disk_sets = list()
+	var/parallax_icon = "planet"
 	var/armor_style = "default"
 	var/quickbuilds = 1000
 	var/list/gamemodes = list()
@@ -33,7 +34,6 @@
 
 	var/squads_max_num = 4
 
-
 /proc/load_map_config(filename, default, delete_after, error_if_missing = TRUE)
 	var/datum/map_config/config = new
 	if(default)
@@ -44,7 +44,6 @@
 	if(delete_after)
 		fdel(filename)
 	return config
-
 
 /proc/load_map_configs(list/maptypes, default, delete_after, error_if_missing = TRUE)
 	var/list/configs = list()
@@ -97,6 +96,7 @@
 	map_name = json["map_name"]
 	CHECK_EXISTS("map_path")
 	map_path = json["map_path"]
+	parallax_icon = json["parallax_icon"]
 	announce_text = json["announce_text"]
 
 	map_file = json["map_file"]

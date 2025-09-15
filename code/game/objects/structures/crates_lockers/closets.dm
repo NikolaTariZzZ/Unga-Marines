@@ -83,13 +83,13 @@
 
 	take_contents()
 
-/obj/structure/closet/deconstruct(disassembled = TRUE)
+/obj/structure/closet/deconstruct(disassembled = TRUE, mob/living/blame_mob)
 	if(ispath(drop_material) && drop_material_amount)
 		new drop_material(loc, drop_material_amount)
 	dump_contents()
 	return ..()
 
-///USE THIS TO FILL IT, NOT INITIALIZE OR NEW
+///USE THIS TO FILL CONTENTS OF OBJECTS, NOT INITIALIZE OR NEW
 /obj/structure/closet/proc/PopulateContents()
 	return
 
@@ -200,7 +200,7 @@
 /obj/structure/closet/attackby(obj/item/I, mob/user, params)
 	if(user in src)
 		return FALSE
-	if(I.flags_item & ITEM_ABSTRACT)
+	if(I.item_flags & ITEM_ABSTRACT)
 		return FALSE
 	. = ..()
 	if(opened)
@@ -228,15 +228,13 @@
 		return FALSE
 
 	if(opened)
-		if(!welder.use_tool(src, user, 2 SECONDS, 1, 50))
-			balloon_alert(user, "Need more welding fuel")
+		if(!welder.use_tool(src, user, 10 SECONDS, 1, 50, CALLBACK(src, PROC_REF(check_opened))))
 			return TRUE
 		balloon_alert_to_viewers("\The [src] is cut apart by [user]!")
 		deconstruct()
 		return TRUE
 
-	if(!welder.use_tool(src, user, 2 SECONDS, 1, 50))
-		balloon_alert(user, "Need more welding fuel")
+	if(!welder.use_tool(src, user, 10 SECONDS, 1, 50, CALLBACK(src, PROC_REF(check_closed))))
 		return TRUE
 	welded = !welded
 	update_icon()
@@ -373,12 +371,19 @@
 	return TRUE
 
 /obj/structure/closet/contents_explosion(severity)
+	. = ..()
 	for(var/i in contents)
 		var/atom/movable/closet_contents = i
 		closet_contents.ex_act(severity)
 
 /obj/structure/closet/proc/closet_special_handling(mob/living/mob_to_stuff)
 	return TRUE //We are permisive by default.
+
+/obj/structure/closet/proc/check_opened()
+	return opened
+
+/obj/structure/closet/proc/check_closed()
+	return !opened
 
 //Redefined procs for closets
 
@@ -409,12 +414,15 @@
 		return FALSE
 	return TRUE
 
+/obj/structure/closet_insertion_allowed(obj/structure/closet/destination)
+	return FALSE
+
 /obj/item/closet_insertion_allowed(obj/structure/closet/destination)
 	if(anchored)
 		return FALSE
 	if(!CHECK_BITFIELD(destination.closet_flags, CLOSET_ALLOW_DENSE_OBJ) && density)
 		return FALSE
-	if(CHECK_BITFIELD(flags_item, DELONDROP))
+	if(CHECK_BITFIELD(item_flags, DELONDROP))
 		return FALSE
 	var/item_size = CEILING(w_class * 0.5, 1)
 	if(item_size + destination.item_size_counter > destination.storage_capacity)
@@ -422,16 +430,9 @@
 	destination.item_size_counter += item_size
 	return TRUE
 
-/obj/structure/bed/closet_insertion_allowed(obj/structure/closet/destination)
-	if(length(buckled_mobs))
-		return FALSE
-
-/obj/structure/closet/closet_insertion_allowed(obj/structure/closet/destination)
-	return FALSE
-
 /mob/living/proc/on_closet_dump(obj/structure/closet/origin)
-	SetStun(origin.closet_stun_delay)//Action delay when going out of a closet
-	if(!lying_angle && IsStun())
+	SetStun(origin.closet_stun_delay)
+	if(!lying_angle && has_status_effect(STATUS_EFFECT_STUN))
 		balloon_alert_to_viewers("Gets out of [origin]", ignored_mobs = src)
 		balloon_alert(src, "You struggle to get your bearings")
 

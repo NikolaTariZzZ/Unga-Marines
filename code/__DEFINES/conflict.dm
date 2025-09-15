@@ -37,7 +37,7 @@
 #define INTENT_NUMBER_HARM 3
 
 //Ammo defines for gun/projectile related things.
-//flags_ammo_behavior
+//ammo_behavior_flags
 
 ///Ammo will impact a targeted open turf instead of continuing past it
 #define AMMO_TARGET_TURF (1<<0)
@@ -77,24 +77,26 @@
 #define AMMO_SENTRY (1<<17)
 
 //Gun defines for gun related thing. More in the projectile folder.
-//flags_gun_features
+//gun_features_flags
 #define GUN_CAN_POINTBLANK (1<<0)
 #define GUN_UNUSUAL_DESIGN (1<<1)
 #define GUN_AMMO_COUNTER (1<<2)
 #define GUN_WIELDED_FIRING_ONLY (1<<3)
 #define GUN_ALLOW_SYNTHETIC (1<<4)
 #define GUN_WIELDED_STABLE_FIRING_ONLY (1<<5)
-#define GUN_IFF (1<<6)
-#define GUN_DEPLOYED_FIRE_ONLY (1<<7)
-#define GUN_IS_ATTACHMENT (1<<8)
-#define GUN_ATTACHMENT_FIRE_ONLY (1<<9)
-#define GUN_ENERGY (1<<10)
-#define GUN_AMMO_COUNT_BY_PERCENTAGE (1<<11)
-#define GUN_AMMO_COUNT_BY_SHOTS_REMAINING (1<<12)
-#define GUN_NO_PITCH_SHIFT_NEAR_EMPTY (1<<13)
-#define GUN_SHOWS_AMMO_REMAINING (1<<14) //Whether the mob sprite reflects the ammo level
-#define GUN_SHOWS_LOADED (1<<15) //Whether the mob sprite as loaded or unloaded, a binary version of the above
-#define GUN_SMOKE_PARTICLES (1<<16) //Whether the gun has smoke particles
+#define GUN_DEPLOYED_FIRE_ONLY (1<<6)
+#define GUN_IS_ATTACHMENT (1<<7)
+#define GUN_ATTACHMENT_FIRE_ONLY (1<<8)
+#define GUN_ENERGY (1<<9)
+#define GUN_AMMO_COUNT_BY_PERCENTAGE (1<<10)
+#define GUN_AMMO_COUNT_BY_SHOTS_REMAINING (1<<11)
+#define GUN_NO_PITCH_SHIFT_NEAR_EMPTY (1<<12)
+///Whether the mob sprite reflects the ammo level
+#define GUN_SHOWS_AMMO_REMAINING (1<<13)
+///Whether the mob sprite as loaded or unloaded, a binary version of the above
+#define GUN_SHOWS_LOADED (1<<14)
+///Whether the gun has smoke particles
+#define GUN_SMOKE_PARTICLES (1<<15)
 
 //reciever_flags. Used to determin how the gun cycles, what kind of ammo it uses, etc.
 #define AMMO_RECIEVER_REQUIRES_UNIQUE_ACTION (1<<0)
@@ -128,11 +130,14 @@
 #define AUTOFIRE_CONTINUE (1<<0)
 #define AUTOFIRE_SUCCESS (1<<1)
 
-//Ammo magazine defines, for flags_magazine
+//Ammo magazine defines, for magazine_flags
 #define MAGAZINE_REFILLABLE (1<<0)
 #define MAGAZINE_HANDFUL (1<<1)
 #define MAGAZINE_WORN (1<<2)
 #define MAGAZINE_REFUND_IN_CHAMBER (1<<3)
+#define MAGAZINE_NOT_FABRICABLE (1<<4)
+///ammo count shown on mag sprite
+#define MAGAZINE_SHOW_AMMO (1<<5)
 
 //Slowdown from various armors.
 #define SHOES_SLOWDOWN -1.0			// How much shoes slow you down by default. Negative values speed you up
@@ -144,10 +149,10 @@
 #define SLOWDOWN_ARMOR_VERY_HEAVY 1
 
 //Marine armor defines
-#define MARINE_ARMOR_LIGHT list(MELEE = 35, BULLET = 50, LASER = 50, ENERGY = 30, BOMB = 10, BIO = 30, FIRE = 5, ACID = 35)
-#define MARINE_ARMOR_MEDIUM list(MELEE = 45, BULLET = 60, LASER = 60, ENERGY = 40, BOMB = 20, BIO = 40, FIRE = 10, ACID = 45)
-#define MARINE_ARMOR_HEAVY list(MELEE = 55, BULLET = 70, LASER = 70, ENERGY = 50, BOMB = 30, BIO = 50, FIRE = 15, ACID = 55)
-#define MARINE_HAT_ARMOR list(MELEE = 15, BULLET = 15, LASER = 15, ENERGY = 15, BOMB = 10, BIO = 5, FIRE = 5, ACID = 5)
+#define MARINE_ARMOR_LIGHT list(MELEE = 35, BULLET = 50, LASER = 50, ENERGY = 40, BOMB = 10, BIO = 40, FIRE = 5, ACID = 40)
+#define MARINE_ARMOR_MEDIUM list(MELEE = 45, BULLET = 60, LASER = 60, ENERGY = 50, BOMB = 20, BIO = 45, FIRE = 10, ACID = 50)
+#define MARINE_ARMOR_HEAVY list(MELEE = 55, BULLET = 70, LASER = 70, ENERGY = 60, BOMB = 30, BIO = 50, FIRE = 15, ACID = 60)
+#define MARINE_HAT_ARMOR list(MELEE = 15, BULLET = 15, LASER = 15, ENERGY = 15, BOMB = 10, BIO = 5, FIRE = 5, ACID = 20)
 
 //=================================================
 
@@ -183,13 +188,24 @@
 #define SMOKE_XENO_HEMODILE (1<<12)
 #define SMOKE_XENO_TRANSVITOX (1<<13)
 #define SMOKE_CHEM (1<<14)
-#define SMOKE_EXTINGUISH (1<<15) //Extinguishes fires and mobs that are on fire
-#define SMOKE_NEURO_LIGHT (1<<16) //Effectively a sub-flag of Neuro; precludes higher impact effects
-#define SMOKE_HUGGER_PACIFY (1<<17) //Smoke that pacifies huggers in its area; mainly used for vision blocking smoke
-#define SMOKE_XENO_SANGUINAL (1<<18) //Toxic crimson smoke created by the Defiler's Defile ability.
-#define SMOKE_XENO_OZELOMELYN (1<<19) //Smoke that purges chemicals and does minor capped toxin damage for Defiler.
-#define SMOKE_SATRAPINE (1<<20) //nerve agent that purges painkillers and causes increasing pain
-#define SMOKE_XENO_TOXIC (1<<21) //deals damage to anyone inside it and inflicts the intoxicated debuff, dealing damage over time
+/// Extinguishes fires and mobs that are on fire
+#define SMOKE_EXTINGUISH (1<<15)
+/// Effectively a sub-flag of Neuro; precludes higher impact effects
+#define SMOKE_NEURO_LIGHT (1<<16)
+/// Smoke that pacifies huggers in its area; mainly used for vision blocking smoke
+#define SMOKE_HUGGER_PACIFY (1<<17)
+/// Toxic crimson smoke created by the Defiler's Defile ability.
+#define SMOKE_XENO_SANGUINAL (1<<18)
+/// Smoke that purges chemicals and does minor capped toxin damage for Defiler.
+#define SMOKE_XENO_OZELOMELYN (1<<19)
+/// Nerve agent that purges painkillers and causes increasing pain
+#define SMOKE_SATRAPINE (1<<20)
+/// Deals damage to anyone inside it and inflicts the intoxicated debuff, dealing damage over time
+#define SMOKE_XENO_TOXIC (1<<21)
+/// This smoke removes any smoke has this in its effects_cycle, that removes certain types of smokes.
+#define SMOKE_PURGER (1<<22)
+/// Smoke that acts like SMOKE_BLISTERING for non-xenos and applies pyrogen's melting fire status effect when entering.
+#define SMOKE_XENO_PYROGEN (1<<23)
 
 //Incapacitated
 #define INCAPACITATED_IGNORE_RESTRAINED (1<<0)
@@ -201,7 +217,6 @@
 #define RESTRAINED_NECKGRAB (1<<1)
 #define RESTRAINED_STRAIGHTJACKET (1<<2)
 #define RESTRAINED_RAZORWIRE (1<<3)
-#define RESTRAINED_PSYCHICGRAB (1<<4)
 
 #define SINGLE_CASING (1 << 0)
 #define SPEEDLOADER (1 << 1)
@@ -249,5 +264,27 @@
 //Explosion damage multipliers for different objects
 #define RESIN_EXPLOSIVE_MULTIPLIER 0.85
 
+// What kind of function to use for Explosions falling off.
+#define EXPLOSION_FALLOFF_SHAPE_LINEAR 1
+#define EXPLOSION_FALLOFF_SHAPE_EXPONENTIAL 2
+#define EXPLOSION_FALLOFF_SHAPE_EXPONENTIAL_HALF 3
+
+#define EXPLOSION_MAX_POWER 5000
+
 //Damage modificator
 #define PRED_MELEE_DAMAGE_MOD 0.5
+
+//Cave comms defines
+/// No impact on comms
+#define CAVE_NO_INTERFERENCE 0
+/// Scrambles outgoing messages, no impact on incoming.
+#define CAVE_MINOR_INTERFERENCE 1
+/// Prevents incoming and outgoing messages.
+#define CAVE_FULL_INTERFERENCE 2
+
+/// Time needed to initially configure an antenna module after equipping
+#define ANTENNA_SYNCING_TIME 30 SECONDS
+
+#define CADE_TYPE_BOMB "concussive armor"
+#define CADE_TYPE_MELEE "ballistic armor"
+#define CADE_TYPE_ACID "caustic armor"

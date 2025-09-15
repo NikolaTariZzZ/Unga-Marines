@@ -19,9 +19,6 @@
 /datum/config_entry/keyed_list/min_pop/ValidateListEntry(key_name, key_value)
 	return key_name in config.modes
 
-/datum/config_entry/string/alert_delta
-	config_entry_value = "Destruction of the station is imminent. All crew are instructed to obey all instructions given by heads of staff. Any violations of these orders can be punished by death. This is not a drill."
-
 /datum/config_entry/number/revival_brain_life
 	config_entry_value = -1
 	integer = FALSE
@@ -104,8 +101,3 @@
 ///If TRUE, the evo proc will consider spawn roony instead of runner on evo
 /datum/config_entry/flag/roony
 	config_entry_value = FALSE
-
-/datum/config_entry/number/marine_respawn
-	config_entry_value = 30 MINUTES
-	max_val = 30 MINUTES
-	min_val = 0

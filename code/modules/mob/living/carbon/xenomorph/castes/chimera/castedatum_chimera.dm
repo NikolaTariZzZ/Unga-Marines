@@ -23,7 +23,7 @@
 	max_health = 350
 
 	// *** Flags *** //
-	caste_flags = CASTE_EVOLUTION_ALLOWED|CASTE_ACID_BLOOD
+	caste_flags = CASTE_EVOLUTION_ALLOWED
 	can_flags = CASTE_CAN_BE_QUEEN_HEALED|CASTE_CAN_BE_GIVEN_PLASMA|CASTE_CAN_BE_LEADER
 	caste_traits = null
 
@@ -70,7 +70,7 @@
 
 /datum/xeno_caste/chimera/phantom
 	caste_type_path = /mob/living/carbon/xenomorph/chimera/phantom
-	caste_flags = CASTE_DO_NOT_ALERT_LOW_LIFE|CASTE_IS_A_MINION|CASTE_DO_NOT_ANNOUNCE_DEATH
+	caste_flags = CASTE_DO_NOT_ALERT_LOW_LIFE|CASTE_IS_A_MINION|CASTE_DO_NOT_ANNOUNCE_DEATH|CASTE_EXCLUDE_STRAINS
 	can_flags = CASTE_CAN_BE_QUEEN_HEALED
 	caste_traits = null
 
