@@ -33,7 +33,7 @@
 	///Applies the actual bonus points for the dropship for each sale, even much more than miners
 	var/dropship_bonus = 40
 
-/obj/structure/sensor_tower_infestation/Initialize()
+/obj/structure/sensor_tower_infestation/Initialize(mapload)
 	. = ..()
 	name += " " + num2text(id)
 	towerid = id
@@ -183,9 +183,9 @@
 /obj/structure/sensor_tower_infestation/proc/update_control_minimap_icon()
 	SSminimaps.remove_marker(src)
 	if(activated)
-		SSminimaps.add_marker(src, MINIMAP_FLAG_ALL, image('icons/UI_icons/map_blips_large.dmi', null, "beacon_marines"))
+		SSminimaps.add_marker(src, MINIMAP_FLAG_ALL, image('icons/UI_icons/map_blips_large.dmi', null, "beacon_marines", MINIMAP_BLIPS_LAYER))
 	else
-		SSminimaps.add_marker(src, MINIMAP_FLAG_ALL, image('icons/UI_icons/map_blips_large.dmi', null, "beacon[current_timer ? "_capture" : "_xeno"]"))
+		SSminimaps.add_marker(src, MINIMAP_FLAG_ALL, image('icons/UI_icons/map_blips_large.dmi', null, "beacon[current_timer ? "_capture" : "_xeno"]", MINIMAP_BLIPS_LAYER))
 
 /obj/structure/sensor_tower_infestation/process()
 	if(add_tick < required_ticks)

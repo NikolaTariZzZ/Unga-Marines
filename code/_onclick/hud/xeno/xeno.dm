@@ -19,12 +19,12 @@
 		return
 	var/mob/living/carbon/xenomorph/X = usr
 	X.toggle_nightvision()
-	switch(X.lighting_alpha)
-		if(LIGHTING_PLANE_ALPHA_INVISIBLE)
+	switch(X.lighting_cutoff)
+		if(LIGHTING_CUTOFF_FULLBRIGHT)
 			icon_state = "nightvision3"
-		if(LIGHTING_PLANE_ALPHA_MOSTLY_INVISIBLE)
+		if(LIGHTING_CUTOFF_HIGH)
 			icon_state = "nightvision2"
-		if(LIGHTING_PLANE_ALPHA_MOSTLY_VISIBLE)
+		if(LIGHTING_CUTOFF_MEDIUM)
 			icon_state = "nightvision1"
 		else
 			icon_state = "nightvision0"
@@ -64,6 +64,11 @@
 /atom/movable/screen/alien/sunderhud
 	icon_state = "sunder0"
 	screen_loc = ui_sunderhud
+
+/atom/movable/screen/alien/biomassdisplay
+	name = "biomass stored"
+	icon_state = "biomass_0"
+	screen_loc = ui_alienbiomassdisplay
 
 /datum/hud/alien/New(mob/living/carbon/xenomorph/owner, ui_style, ui_color, ui_alpha = 230)
 	. = ..()
@@ -148,6 +153,10 @@
 	alien_sunder_display = new /atom/movable/screen/alien/sunderhud()
 	alien_sunder_display.alpha = ui_alpha
 	infodisplay += alien_sunder_display
+
+	alien_biomass_display = new /atom/movable/screen/alien/biomassdisplay(null, src)
+	alien_biomass_display.alpha = ui_alpha
+	infodisplay += alien_biomass_display
 
 	pull_icon = new /atom/movable/screen/pull(null, src)
 	pull_icon.icon = 'icons/mob/screen/alien.dmi'

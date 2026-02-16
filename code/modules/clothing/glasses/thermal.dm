@@ -3,8 +3,9 @@
 	desc = "Thermals in the shape of glasses."
 	icon_state = "thermal"
 	worn_icon_state = "glasses"
-	vision_flags = SEE_MOBS
-	lighting_alpha = LIGHTING_PLANE_ALPHA_INVISIBLE
+	toggleable = TRUE
+	vision_flags = SEE_MOBS // todo replace with tgs TRAIT_THERMAL_VISION
+	lighting_cutoff = LIGHTING_CUTOFF_MEDIUM
 	eye_protection = -1
 	deactive_state = "goggles_off"
 
@@ -30,7 +31,7 @@
 		slot_glasses_str = 'icons/mob/hunter/pred_gear.dmi'
 	)
 
-/obj/item/clothing/glasses/thermal/yautja/Initialize()
+/obj/item/clothing/glasses/thermal/yautja/Initialize(mapload)
 	. = ..()
 	ADD_TRAIT(src, TRAIT_NODROP, TRAIT_GENERIC)
 

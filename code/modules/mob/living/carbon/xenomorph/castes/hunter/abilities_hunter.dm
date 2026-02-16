@@ -129,7 +129,7 @@
 		animate(xeno_owner, 0.5 SECONDS, alpha = HUNTER_STEALTH_WALK_ALPHA * stealth_alpha_multiplier)
 	else
 		handle_plasma_usage(xeno_owner, HUNTER_STEALTH_RUN_PLASMADRAIN)
-		animate(owner, 0.5 SECONDS, alpha = HUNTER_STEALTH_RUN_ALPHA * stealth_alpha_multiplier)
+		animate(xeno_owner, 0.5 SECONDS, alpha = HUNTER_STEALTH_RUN_ALPHA * stealth_alpha_multiplier)
 	if(!xeno_owner.plasma_stored)
 		to_chat(xeno_owner, span_xenodanger("We lack sufficient plasma to remain camouflaged."))
 		cancel_stealth()
@@ -148,8 +148,7 @@
 /datum/action/ability/xeno_action/stealth/proc/handle_plasma_usage(mob/user, amount)
 	if(ispath(xeno_owner.loc_weeds_type, /obj/alien/weeds))
 		return
-	else
-		xeno_owner.use_plasma(amount)
+	xeno_owner.use_plasma(amount)
 
 /// Callback listening for a xeno_owner using the pounce ability
 /datum/action/ability/xeno_action/stealth/proc/sneak_attack_pounce()
@@ -282,6 +281,10 @@
 	var/pounce_range = HUNTER_POUNCE_RANGE
 	///pass_flags given when leaping
 	var/leap_pass_flags = PASS_LOW_STRUCTURE|PASS_FIRE|PASS_XENO
+	/// The stun duration (inflicted to mob) on successful tackle.
+	var/stun_duration = XENO_POUNCE_STUN_DURATION
+	/// The immobilize duration (inflicted to self) on successful tackle.
+	var/self_immobilize_duration = XENO_POUNCE_STANDBY_DURATION
 
 /datum/action/ability/activable/xeno/pounce/on_cooldown_finish()
 	owner.balloon_alert(owner, "Pounce ready")
@@ -338,9 +341,10 @@
 ///Triggers the effect of a successful pounce on the target.
 /datum/action/ability/activable/xeno/pounce/proc/trigger_pounce_effect(mob/living/living_target)
 	playsound(get_turf(living_target), 'sound/voice/alien/pounce.ogg', 25, TRUE)
+	xeno_owner.Immobilize(self_immobilize_duration)
 	xeno_owner.set_throwing(FALSE)
 	xeno_owner.forceMove(get_turf(living_target))
-	living_target.Knockdown(XENO_POUNCE_STUN_DURATION)
+	living_target.Knockdown(stun_duration)
 
 /datum/action/ability/activable/xeno/pounce/proc/pounce_complete()
 	SIGNAL_HANDLER

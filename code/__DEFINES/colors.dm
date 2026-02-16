@@ -10,6 +10,10 @@
 ///how many colour priority levels there are.
 #define COLOR_PRIORITY_AMOUNT 4
 
+//Filters
+#define AMBIENT_OCCLUSION filter(type="drop_shadow", x=0, y=-2, size=4, color="#04080FAA")
+#define GAUSSIAN_BLUR(filter_size) filter(type="blur", size=filter_size)
+
 #define LIGHTMODE_BACKGROUND "none"
 #define LIGHTMODE_TEXT "#000000"
 
@@ -42,6 +46,7 @@
 #define COLOR_VIVID_RED "#FF3232"
 #define COLOR_LIGHT_GRAYISH_RED "#E4C7C5"
 #define COLOR_LOBBY_RED "#B43535"
+#define COLOR_FIRE_LIGHT_RED "#B61C1C"
 
 /// Warm but extremely diluted red. rgb(250, 130, 130)
 #define COLOR_SOFT_RED "#FA8282"
@@ -55,9 +60,12 @@
 #define COLOR_OLIVE "#808000"
 #define COLOR_VIBRANT_LIME "#00FF00"
 #define COLOR_LIME "#32CD32"
+#define COLOR_MOSSY_GREEN "#70DF00"
+#define COLOR_EMERALD_GREEN "#16C76B"
 #define COLOR_VERY_PALE_LIME_GREEN "#DDFFD3"
 #define COLOR_VERY_DARK_LIME_GREEN "#003300"
 #define COLOR_GREEN "#008000"
+#define COLOR_DEEP_MOSS_GREEN "#306900"
 #define COLOR_DARK_MODERATE_LIME_GREEN "#44964A"
 
 #define COLOR_CYAN "#00FFFF"
@@ -68,6 +76,7 @@
 #define COLOR_MODERATE_BLUE "#555CC2"
 #define COLOR_BLUE_LIGHT "#33CCFF"
 #define COLOR_NAVY "#000080"
+#define COLOR_DUSKY_BLUE "#4D6796"
 #define COLOR_BLUE_GRAY "#75A2BB"
 #define COLOR_DISABLER_BLUE "#7E89FF"
 #define COLOR_PULSE_BLUE "#BEFFFF"
@@ -77,6 +86,7 @@
 #define COLOR_MOSTLY_PURE_PINK "#E4005B"
 #define COLOR_MAGENTA "#FF00FF"
 #define COLOR_STRONG_MAGENTA "#B800B8"
+#define COLOR_DEEP_MAGENTA "#A82196"
 #define COLOR_PURPLE "#800080"
 #define COLOR_VIOLET "#B900F7"
 #define COLOR_STRONG_VIOLET "#6927c5"
@@ -85,6 +95,7 @@
 #define COLOR_TAN_ORANGE "#FF7B00"
 #define COLOR_BRIGHT_ORANGE "#E2853D"
 #define COLOR_LIGHT_ORANGE "#ffc44d"
+#define COLOR_SCOTCH_CREAM "#FEE4BF"
 #define COLOR_PALE_ORANGE "#FFBE9D"
 #define COLOR_BEIGE "#CEB689"
 #define COLOR_DARK_ORANGE "#C3630C"
@@ -298,3 +309,13 @@ Important note: colors can end up significantly different from the basic html pi
 #define COLOR_SQUAD_BRAVO "#ffc32d" // rgb(255,195,45)
 #define COLOR_SQUAD_CHARLIE "#c864c8" // rgb(200,100,200)
 #define COLOR_SQUAD_DELTA "#4148c8" // rgb(65,72,200)
+
+//Colours associated with runechat
+#define CHAT_COLOR_SQUAD_ALPHA "#dd7878"
+#define CHAT_COLOR_DARKENED_SQUAD_ALPHA "#c85a5a"
+#define CHAT_COLOR_SQUAD_BRAVO "#ddc478"
+#define CHAT_COLOR_DARKENED_SQUAD_BRAVO "#c8ac5a"
+#define CHAT_COLOR_SQUAD_CHARLIE "#dd78d3"
+#define CHAT_COLOR_DARKENED_SQUAD_CHARLIE "#c85abd"
+#define CHAT_COLOR_SQUAD_DELTA "#787ddd"
+#define CHAT_COLOR_DARKENED_SQUAD_DELTA "#5a60c8"

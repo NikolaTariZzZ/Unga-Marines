@@ -12,6 +12,7 @@
 	max_integrity = 1000
 	resistance_flags = UNACIDABLE | DROPSHIP_IMMUNE | PLASMACUTTER_IMMUNE
 	xeno_structure_flags = IGNORE_WEED_REMOVAL|CRITICAL_STRUCTURE|XENO_STRUCT_WARNING_RADIUS|XENO_STRUCT_DAMAGE_ALERT
+	layer = ABOVE_WEEDS_LAYER
 	plane = FLOOR_PLANE
 	///How many larva points one silo produce in one minute
 	var/larva_spawn_rate = 0.5
@@ -39,6 +40,8 @@
 
 /obj/structure/xeno/silo/LateInitialize()
 	. = ..()
+	if(!(SSticker.mode?.round_type_flags & MODE_SILO_RESPAWN))
+		QDEL_NULL(proximity_monitor)
 	var/siloprefix = GLOB.hive_datums[hivenumber].name
 	number_silo = length(GLOB.xeno_resin_silos_by_hive[hivenumber]) + 1
 	name = "[siloprefix == "Normal" ? "" : "[siloprefix] "][name] [number_silo]"
@@ -57,11 +60,6 @@
 		newt.name += " [name]"
 	if(GLOB.hive_datums[hivenumber])
 		SSticker.mode.update_silo_death_timer(GLOB.hive_datums[hivenumber])
-
-/obj/structure/xeno/silo/set_proximity_warning()
-	if(!(SSticker.mode?.round_type_flags & MODE_SILO_RESPAWN))
-		return
-	return ..()
 
 /obj/structure/xeno/silo/obj_destruction(damage_amount, damage_type, damage_flag, mob/living/blame_mob)
 	if(GLOB.hive_datums[hivenumber])
@@ -105,7 +103,7 @@
 
 /obj/structure/xeno/silo/update_minimap_icon()
 	SSminimaps.remove_marker(src)
-	SSminimaps.add_marker(src, MINIMAP_FLAG_XENO, image('icons/UI_icons/map_blips.dmi', null, "silo[threat_warning ? "_warn" : "_passive"]", HIGH_FLOAT_LAYER))
+	SSminimaps.add_marker(src, MINIMAP_FLAG_XENO, image('icons/UI_icons/map_blips.dmi', null, "silo[threat_warning ? "_warn" : "_passive"]", MINIMAP_LABELS_LAYER))
 
 /obj/structure/xeno/silo/process()
 	//Regenerate if we're at less than max integrity

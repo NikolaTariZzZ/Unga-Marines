@@ -19,6 +19,7 @@ GLOBAL_DATUM_INIT(round_statistics, /datum/round_statistics, new)
 	var/points_from_research = 0
 	var/points_from_mining = 0
 	var/points_from_xenos = 0
+	var/points_from_orbit = 0
 	var/total_xeno_deaths = 0
 	///All human deaths during the round, listed by faction
 	var/list/total_human_deaths = list()
@@ -94,6 +95,8 @@ GLOBAL_DATUM_INIT(round_statistics, /datum/round_statistics, new)
 	var/larva_from_cocoon = 0
 	var/larva_from_psydrain = 0
 	var/req_items_produced = list()
+	/// The amount of health points restored via the Essence Link status effect and Salve Regen status effect.
+	var/drone_essence_link = 0
 	var/psy_crushes = 0
 	var/psy_blasts = 0
 	var/psy_lances = 0

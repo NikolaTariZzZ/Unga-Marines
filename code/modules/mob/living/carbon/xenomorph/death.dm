@@ -15,6 +15,10 @@
 	hive?.on_xeno_death(src)
 	hive?.update_tier_limits() //Update our tier limits.
 
+	// Invalidate hivemind cache if this was a hivemind
+	if(isxenohivemind(src))
+		hive?.update_hivemind_cache()
+
 	if(xeno_flags & XENO_ZOOMED)
 		zoom_out()
 
@@ -90,8 +94,6 @@
 	remains.icon = icon
 	remains.pixel_x = pixel_x //For 2x2.
 
-	SEND_SIGNAL(src, COMSIG_XENOMORPH_GIBBING)
-
 	remains.icon = effects_icon
 	remains.icon_state = xeno_caste.gib_anim
 
@@ -114,7 +116,4 @@
 		return
 
 	fade_out(src, our_time = 5 SECONDS)
-	sleep(5 SECONDS)
-	if(prob(25))
-		new /obj/item/research_product/money/basic(loc)
-	qdel(src)
+	QDEL_IN(src, 5 SECONDS)

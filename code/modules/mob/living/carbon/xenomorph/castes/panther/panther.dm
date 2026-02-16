@@ -5,7 +5,6 @@
 	icon = 'icons/Xeno/castes/panther/basic.dmi'
 	icon_state = "Panther Walking" //Panther sprites by Drawsstuff (CC BY-NC-SA 3.0)
 	effects_icon = 'icons/Xeno/castes/panther/effects.dmi'
-	rouny_icon = 'icons/Xeno/castes/panther/rouny.dmi'
 	health = 50
 	maxHealth = 100
 	plasma_stored = 10
@@ -19,7 +18,12 @@
 		/mob/living/carbon/xenomorph/proc/vent_crawl,
 	)
 
-/mob/living/carbon/xenomorph/panther/Initialize()
+	skins = list(
+		/datum/xenomorph_skin/panther,
+		/datum/xenomorph_skin/panther/rouny,
+	)
+
+/mob/living/carbon/xenomorph/panther/Initialize(mapload)
 	. = ..()
 	addtimer(CALLBACK(src, PROC_REF(adrenalin)), 1 SECONDS, TIMER_LOOP)
 

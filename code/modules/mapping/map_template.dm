@@ -106,7 +106,9 @@
 	var/list/bounds = parsed.bounds
 	if(!bounds)
 		return FALSE
-	repopulate_sorted_areas()
+
+	require_area_resort()
+
 	//initialize things that are normally initialized after map load
 	initTemplateBounds(bounds)
 	SSmodularmapping.load_modular_maps() //must be run after initTemplateBounds so markers have an actual loc
@@ -120,7 +122,7 @@
 
 	return level
 
-/datum/map_template/proc/load(turf/T, centered = FALSE, delete = FALSE)
+/datum/map_template/proc/load(turf/T, centered = FALSE)
 	if(centered)
 		T = locate(T.x - round(width * 0.5), T.y - round(height * 0.5), T.z)
 	if(!T)
@@ -154,7 +156,7 @@
 	if(!bounds)
 		return
 
-	repopulate_sorted_areas()
+	require_area_resort()
 	//initialize things that are normally initialized after map load
 	initTemplateBounds(bounds)
 

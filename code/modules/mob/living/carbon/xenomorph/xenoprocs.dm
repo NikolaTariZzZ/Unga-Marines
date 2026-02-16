@@ -23,13 +23,6 @@
 
 	change_skin()
 
-/mob/living/carbon/xenomorph/verb/make_rouny()
-	set name = "Make rouny"
-	set desc = "Makes you funny beno."
-	set category = "Alien"
-
-	toggle_rouny()
-
 /mob/living/carbon/xenomorph/verb/tunnel_list()
 	set name = "Tunnel List"
 	set desc = "See all currently active tunnels."
@@ -68,43 +61,27 @@
 
 	return
 
-/mob/living/carbon/xenomorph/proc/toggle_rouny()
-	#ifndef TESTING
-	if(SSdiscord.get_boosty_tier(ckey) < BOOSTY_TIER_3)
-		to_chat(usr, span_notice("You need a higher boosty tier to use this."))
-		return
-	#endif
-
-	if(!rouny_icon)
-		to_chat(usr, span_notice("Sorry, but rouny skin is currently unavailable for this caste."))
-		return
-
-	toggle_rouny_skin()
-
-/mob/living/carbon/xenomorph/proc/toggle_rouny_skin()
-	if(!rouny_icon) // we should check for it before using the proc, but just in case
-		return
-
-	if(icon == rouny_icon)
-		icon = base_icon
-	else
-		icon = rouny_icon
-
 /mob/living/carbon/xenomorph/proc/change_skin()
 	if(!length(skins))
 		balloon_alert(src, "Your caste does not have the ability to change appearance.")
 		return
 
-	#ifndef TESTING
-	if(SSdiscord.get_boosty_tier(ckey) < BOOSTY_TIER_2)
-		to_chat(usr, span_notice("You need a higher boosty tier to use this."))
+	var/boosty_access_tier = SSdiscord.get_boosty_tier(ckey)
+	if(check_other_rights(client, R_ADMIN, FALSE))
+		boosty_access_tier = BOOSTY_TIER_3
+	if(boosty_access_tier < BOOSTY_TIER_2)
+		to_chat(usr, span_notice("You need a higher boosty tier to use this!"))
 		return
-	#endif
 
 	var/datum/xenomorph_skin/selection
-	var/list/available_skins = list() // we do a list of names instead of datums
-	for(var/datum/xenomorph_skin/our_skin AS in skins)
+	var/list/available_skins = list()// we do a list of names instead of datums
+	for(var/datum/xenomorph_skin/our_skin as anything in skins)
+		if(our_skin.access_needed > boosty_access_tier)
+			continue
 		available_skins[our_skin.name] = our_skin
+	if(length(available_skins) < 2)
+		to_chat(usr, span_notice("There aren't any skins that you can access!"))
+		return
 	var/answer = tgui_input_list(src, "Choose a setting appearance", "Choose a setting appearance", available_skins)
 	selection = available_skins[answer]
 
@@ -112,9 +89,7 @@
 		return
 
 	icon = selection.icon
-	base_icon = selection.icon
 	effects_icon = selection.effects_icon
-	rouny_icon = selection.rouny_icon
 
 /mob/living/carbon/xenomorph/Topic(href, href_list)
 	. = ..()
@@ -149,24 +124,6 @@
 			// Checks for can use done in overwatch action.
 			SEND_SIGNAL(src, COMSIG_XENOMORPH_WATCHXENO, target)
 
-	if(href_list["carapace_buy"])
-		remove_apply_upgrades(GLOB.xeno_survival_upgrades, STATUS_EFFECT_UPGRADE_CARAPACE)
-	if(href_list["regeneration_buy"])
-		remove_apply_upgrades(GLOB.xeno_survival_upgrades, STATUS_EFFECT_UPGRADE_REGENERATION)
-	if(href_list["vampirism_buy"])
-		remove_apply_upgrades(GLOB.xeno_survival_upgrades, STATUS_EFFECT_UPGRADE_VAMPIRISM)
-	if(href_list["celerity_buy"])
-		remove_apply_upgrades(GLOB.xeno_attack_upgrades, STATUS_EFFECT_UPGRADE_CELERITY)
-	if(href_list["adrenalin_buy"])
-		remove_apply_upgrades(GLOB.xeno_attack_upgrades, STATUS_EFFECT_UPGRADE_ADRENALINE)
-	if(href_list["crush_buy"])
-		remove_apply_upgrades(GLOB.xeno_attack_upgrades, STATUS_EFFECT_UPGRADE_CRUSH)
-	if(href_list["toxin_buy"])
-		remove_apply_upgrades(GLOB.xeno_utility_upgrades, STATUS_EFFECT_UPGRADE_TOXIN)
-	if(href_list["phero_buy"])
-		remove_apply_upgrades(GLOB.xeno_utility_upgrades, STATUS_EFFECT_UPGRADE_PHERO)
-	if(href_list["trail_buy"])
-		remove_apply_upgrades(GLOB.xeno_utility_upgrades, STATUS_EFFECT_UPGRADE_TRAIL)
 
 ///Send a message to all xenos. Force forces the message whether or not the hivemind is intact. Target is an atom that is pointed out to the hive. Filter list is a list of xenos we don't message.
 /proc/xeno_message(message = null, span_class = "xenoannounce", size = 5, hivenumber = XENO_HIVE_NORMAL, force = FALSE, atom/target = null, sound = null, apply_preferences = FALSE, filter_list = null, arrow_type, arrow_color, report_distance = FALSE)
@@ -209,7 +166,12 @@
 			action.give_action(src)
 
 	for(var/datum/action/ability/xeno_action/action_already_added AS in actions_already_added)
-		action_already_added.remove_action(src)
+		// Don't remove mutation abilities as they should persist through upgrades
+		if(!istype(action_already_added, /datum/action/ability/xeno_action/mutation))
+			action_already_added.remove_action(src)
+		else
+			// Add mutation abilities back to mob_abilities list so they persist
+			mob_abilities.Add(action_already_added)
 
 	SEND_SIGNAL(src, COMSIG_XENOMORPH_ABILITY_ON_UPGRADE)
 	if(selected_ability_type)
@@ -292,7 +254,7 @@
 
 	. += "Regeneration power: [max(regen_power * 100, 0)]%"
 
-	. += "Biomass: [biomass]/100"
+	. += "Biomass: [biomass]/[biomass > 50 ? biomass : 50]"
 
 	var/casteswap_value = ((GLOB.key_to_time_of_caste_swap[key] ? GLOB.key_to_time_of_caste_swap[key] : -INFINITY)  + 15 MINUTES - world.time) * 0.1
 	if(casteswap_value <= 0)
@@ -451,30 +413,28 @@
 
 	return ..() //Do the parent otherwise, for turfs.
 
-/mob/living/carbon/xenomorph/proc/toggle_nightvision(new_lighting_alpha)
-	if(!new_lighting_alpha)
-		switch(lighting_alpha)
-			if(LIGHTING_PLANE_ALPHA_NV_TRAIT)
-				new_lighting_alpha = LIGHTING_PLANE_ALPHA_MOSTLY_VISIBLE
-			if(LIGHTING_PLANE_ALPHA_MOSTLY_VISIBLE)
-				new_lighting_alpha = LIGHTING_PLANE_ALPHA_MOSTLY_INVISIBLE
-			if(LIGHTING_PLANE_ALPHA_MOSTLY_INVISIBLE)
-				new_lighting_alpha = LIGHTING_PLANE_ALPHA_INVISIBLE
+/mob/living/carbon/xenomorph/proc/toggle_nightvision(new_lighting_cutoff)
+	if(!new_lighting_cutoff)
+		switch(lighting_cutoff)
+			if(LIGHTING_CUTOFF_VISIBLE)
+				new_lighting_cutoff = LIGHTING_CUTOFF_MEDIUM
+			if(LIGHTING_CUTOFF_MEDIUM)
+				new_lighting_cutoff = LIGHTING_CUTOFF_HIGH
+			if(LIGHTING_CUTOFF_HIGH)
+				new_lighting_cutoff = LIGHTING_CUTOFF_FULLBRIGHT
 			else
-				new_lighting_alpha = LIGHTING_PLANE_ALPHA_NV_TRAIT
+				new_lighting_cutoff = LIGHTING_CUTOFF_VISIBLE
 
-	switch(new_lighting_alpha)
-		if(LIGHTING_PLANE_ALPHA_MOSTLY_VISIBLE, LIGHTING_PLANE_ALPHA_MOSTLY_INVISIBLE, LIGHTING_PLANE_ALPHA_INVISIBLE)
-			ENABLE_BITFIELD(sight, SEE_MOBS)
-			ENABLE_BITFIELD(sight, SEE_OBJS)
-			ENABLE_BITFIELD(sight, SEE_TURFS)
-		if(LIGHTING_PLANE_ALPHA_NV_TRAIT)
-			ENABLE_BITFIELD(sight, SEE_MOBS)
-			DISABLE_BITFIELD(sight, SEE_OBJS)
-			DISABLE_BITFIELD(sight, SEE_TURFS)
+	var/new_sight = NONE
+	switch(new_lighting_cutoff)
+		if(LIGHTING_CUTOFF_FULLBRIGHT, LIGHTING_CUTOFF_HIGH, LIGHTING_CUTOFF_MEDIUM)
+			new_sight = SEE_MOBS|SEE_OBJS|SEE_TURFS
+		if(LIGHTING_CUTOFF_VISIBLE)
+			new_sight = SEE_MOBS
 
-	lighting_alpha = new_lighting_alpha
+	lighting_cutoff = new_lighting_cutoff
 
+	set_sight(new_sight)
 	update_sight()
 
 /mob/living/carbon/xenomorph/proc/zoom_in(tileoffset = 5, viewsize = 12)
@@ -656,7 +616,11 @@
 	. = ..()
 	if(.)
 		return
+	var/old_sunder = sunder
 	sunder = clamp(sunder + (adjustment > 0 ? adjustment * xeno_caste.sunder_multiplier : adjustment), 0, xeno_caste.sunder_max)
+	SEND_SIGNAL(src, COMSIG_XENOMORPH_SUNDER_CHANGE, old_sunder, sunder)
+	return sunder - old_sunder // The real difference in sunder. Negative: real loss in sunder. Positive: real gain in sunder.
+
 //Applying sunder is an adjustment value above 0, healing sunder is an adjustment value below 0. Use multiplier when taking sunder, not when healing.
 
 /mob/living/carbon/xenomorph/set_sunder(new_sunder)
@@ -713,7 +677,7 @@
 		return
 
 	SSminimaps.remove_marker(src)
-	var/image/blip = image('icons/UI_icons/map_blips.dmi', null, xeno_caste.minimap_icon)
+	var/image/blip = image('icons/UI_icons/map_blips.dmi', null, xeno_caste.minimap_icon, MINIMAP_BLIPS_LAYER)
 	if(makeleader)
 		blip.overlays += image('icons/UI_icons/map_blips.dmi', null, xeno_caste.minimap_leadered_overlay)
 	SSminimaps.add_marker(src, MINIMAP_FLAG_XENO, blip)
@@ -734,59 +698,16 @@
 	set desc = "See current Upgrade Chambers and get mutations for yourself"
 	set category = "Alien"
 
-	get_upgrades(src)
-
-/mob/living/carbon/xenomorph/proc/get_upgrades(mob/living/carbon/xenomorph/user)
-	var/dat = "<div align='center'>"
-
-	dat += "<hr>Active Upgrade Chambers:"
-	dat += "<br>Shell : [length(user?.hive?.shell_chambers)] | Spur : [length(user?.hive?.spur_chambers)] | Veil : [length(user?.hive?.veil_chambers)]"
-	dat += "<br>Biomass: [user?.biomass] / 100"
-
-	dat += "</div>"
-
-	dat += "<div align='center'><hr>List of upgrades:</div>"
-	var/shell_chambers_built = length(user?.hive?.shell_chambers)
-	var/spur_chambers_built = length(user?.hive?.spur_chambers)
-	var/veil_chambers_built = length(user?.hive?.veil_chambers)
-	dat += "<div align='center'>SURVIVAL</div>"
-	dat += "[shell_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];carapace_buy=1'>Carapace</a> " : "<br>Carapace "] | Cost: [XENO_UPGRADE_COST] | Increase our armor."
-	dat += "[shell_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];regeneration_buy=1'>Regeneration</a> " : "<br>Regeneration "] | Cost: [XENO_UPGRADE_COST] | Increase our health regeneration."
-	dat += "[shell_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];vampirism_buy=1'>Vampirism</a> " : "<br>Vampirism "] | Cost: [XENO_UPGRADE_COST] | Leech from our attacks."
-	dat += "<div align='center'>ATTACK</div>"
-	dat += "[spur_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];celerity_buy=1'>Celerity</a> " : "<br>Celerity "] | Cost: [XENO_UPGRADE_COST] | Increase our movement speed."
-	dat += "[spur_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];adrenalin_buy=1'>Adrenalin</a> " : "<br>Adrenalin "] | Cost: [XENO_UPGRADE_COST] | Increase our plasma regeneration."
-	dat += "[spur_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];crush_buy=1'>Crush</a> " : "<br>Crush "] | Cost: [XENO_UPGRADE_COST] | Increase our damage to objects."
-	dat += "<div align='center'>UTILITY</div>"
-	dat += "[veil_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];toxin_buy=1'>Toxin</a> " : "<br>Toxin "] | Cost: [XENO_UPGRADE_COST] | Inject neurotoxin into the target."
-	dat += "[veil_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];phero_buy=1'>Pheromones</a> " : "<br>Pheromones "] | Cost: [XENO_UPGRADE_COST] | Ability to emit pheromones."
-	dat += "[veil_chambers_built ? "<br><a href='byond://?src=[text_ref(src)];trail_buy=1'>Trail</a> " : "<br>Trail "] | Cost: [XENO_UPGRADE_COST] | Leave a trail behind."
-
-	var/datum/browser/popup = new(user, "upgrademenu", "<div align='center'>Mutations Menu</div>", 600, 600)
-	popup.set_content(dat)
-	popup.open()
-
-/mob/living/carbon/xenomorph/proc/remove_apply_upgrades(list/upgrades_to_remove, datum/status_effect/upgrade_to_apply)
-	if(incapacitated(TRUE))
-		to_chat(usr, span_warning("Cant do that right now!"))
+	if(xeno_caste.caste_flags & CASTE_IS_A_MINION)
+		to_chat(src, span_warning("We are too primitive to understand mutations."))
 		return
-	if(biomass < XENO_UPGRADE_COST)
-		to_chat(usr, span_warning("You dont have enough biomass!"))
-		return
-	var/upgrade = locate(upgrade_to_apply) in status_effects
-	if(upgrade)
-		to_chat(usr, span_xenonotice("Existing mutation chosen. No biomass spent."))
-		DIRECT_OUTPUT(usr, browse(null, "window=["upgrademenu"]"))
-		return
-	biomass -= XENO_UPGRADE_COST
-	to_chat(usr, span_xenonotice("Mutation gained."))
-	for(var/datum/status_effect/S AS in upgrades_to_remove)
-		remove_status_effect(S)
-		upgrades_holder.Remove(S.type)
-	do_jitter_animation(500)
-	apply_status_effect(upgrade_to_apply)
-	upgrades_holder.Add(upgrade_to_apply.type)
-	DIRECT_OUTPUT(usr, browse(null, "window=["upgrademenu"]"))
+
+	var/datum/mutation_menu/menu = new(src)
+	menu.ui_interact(src)
+
+// Old browser-based mutation system removed - replaced with TGUI
+
+// Old mutation system removed - replaced with TGUI
 
 //Special override case. May not call the parent.
 /mob/living/carbon/xenomorph/pre_crush_act(mob/living/carbon/xenomorph/charger, datum/action/ability/xeno_action/ready_charge/charge_datum)

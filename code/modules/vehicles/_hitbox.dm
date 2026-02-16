@@ -93,14 +93,15 @@
 	if(HAS_TRAIT(new_desant, TRAIT_TANK_DESANT))
 		return
 	ADD_TRAIT(new_desant, TRAIT_TANK_DESANT, VEHICLE_TRAIT)
-	LAZYSET(tank_desants, new_desant, new_desant.layer)
+	new_desant.add_nosubmerge_trait(VEHICLE_TRAIT)
+	LAZYSET(tank_desants, new_desant, PLANE_TO_TRUE(new_desant.plane))
+	SET_PLANE_IMPLICIT(new_desant, ABOVE_GAME_PLANE)
 	RegisterSignal(new_desant, COMSIG_QDELETING, PROC_REF(on_desant_del))
-	new_desant.layer = ABOVE_MOB_PLATFORM_LAYER
 	root.add_desant(new_desant)
 
 ///Removes a desant
 /obj/hitbox/proc/remove_desant(atom/movable/desant)
-	desant.layer = LAZYACCESS(tank_desants, desant)
+	SET_PLANE_IMPLICIT(desant, LAZYACCESS(tank_desants, desant))
 	desant.remove_traits(list(TRAIT_TANK_DESANT, TRAIT_NOSUBMERGE), VEHICLE_TRAIT)
 	LAZYREMOVE(tank_desants, desant)
 	UnregisterSignal(desant, COMSIG_QDELETING)
@@ -213,12 +214,12 @@
 	if((allow_pass_flags & PASS_TANK) && (mover.pass_flags & PASS_TANK))
 		return TRUE
 
-/obj/hitbox/projectile_hit(obj/projectile/proj)
+/obj/hitbox/projectile_hit(atom/movable/projectile/proj)
 	if(proj.shot_from == root)
 		return FALSE
 	return root.projectile_hit(arglist(args))
 
-/obj/hitbox/bullet_act(obj/projectile/proj)
+/obj/hitbox/bullet_act(atom/movable/projectile/proj)
 	SHOULD_CALL_PARENT(FALSE) // this is an abstract object: we have to avoid everything on parent
 	SEND_SIGNAL(src, COMSIG_ATOM_BULLET_ACT, proj)
 	return root.bullet_act(proj)

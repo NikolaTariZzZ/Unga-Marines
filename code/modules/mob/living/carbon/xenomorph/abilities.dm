@@ -844,7 +844,7 @@
 	var/sound_to_play = pick(1, 2) == 1 ? 'sound/voice/alien/spitacid.ogg' : 'sound/voice/alien/spitacid2.ogg'
 	playsound(xeno_owner.loc, sound_to_play, 25, 1)
 
-	var/obj/projectile/newspit = new /obj/projectile(current_turf)
+	var/atom/movable/projectile/newspit = new /atom/movable/projectile(current_turf)
 	ability_cost = xeno_owner.ammo.spit_cost
 	newspit.generate_bullet(xeno_owner.ammo, xeno_owner.ammo.damage * SPIT_UPGRADE_BONUS(xeno_owner))
 	newspit.def_zone = xeno_owner.get_limbzone_target()
@@ -925,16 +925,16 @@
 	return ..()
 
 /datum/action/ability/xeno_action/xenohide/action_activate()
-	if(xeno_owner.layer != XENO_HIDING_LAYER)
+	if(xeno_owner.layer != BELOW_TABLE_LAYER)
 		RegisterSignals(xeno_owner, list(COMSIG_XENOMORPH_POUNCE, COMSIG_MOB_CRIT, COMSIG_MOB_DEATH), PROC_REF(unhide))
-		xeno_owner.layer = XENO_HIDING_LAYER
+		xeno_owner.layer = BELOW_TABLE_LAYER
 		to_chat(xeno_owner, span_notice("We are now hiding."))
-		button.add_overlay(mutable_appearance('icons/Xeno/actions/_actions.dmi', "selected_purple_frame", ACTION_LAYER_ACTION_ICON_STATE, FLOAT_PLANE))
+		button.add_overlay(mutable_appearance('icons/Xeno/actions/_actions.dmi', "selected_purple_frame", ACTION_LAYER_ACTION_ICON_STATE, null, FLOAT_PLANE))
 	else
 		UnregisterSignal(xeno_owner, list(COMSIG_XENOMORPH_POUNCE, COMSIG_MOB_CRIT, COMSIG_MOB_DEATH))
 		xeno_owner.layer = MOB_LAYER
 		to_chat(xeno_owner, span_notice("We have stopped hiding."))
-		button.cut_overlay(mutable_appearance('icons/Xeno/actions/_actions.dmi', "selected_purple_frame", ACTION_LAYER_ACTION_ICON_STATE, FLOAT_PLANE))
+		button.cut_overlay(mutable_appearance('icons/Xeno/actions/_actions.dmi', "selected_purple_frame", ACTION_LAYER_ACTION_ICON_STATE, null, FLOAT_PLANE))
 
 /datum/action/ability/xeno_action/xenohide/proc/unhide()
 	SIGNAL_HANDLER
@@ -1088,7 +1088,7 @@
 /datum/action/ability/xeno_action/lay_egg/action_activate(mob/living/carbon/xenomorph/user)
 	var/turf/current_turf = get_turf(xeno_owner)
 
-	if(!current_turf.check_alien_construction(xeno_owner, planned_building = /obj/alien/egg/hugger))
+	if(!current_turf.check_alien_construction(xeno_owner, planned_building = /obj/alien/egg/facehugger))
 		return fail_activate()
 
 	if(!xeno_owner.loc_weeds_type)
@@ -1104,7 +1104,7 @@
 	if(!xeno_owner.loc_weeds_type)
 		return fail_activate()
 
-	new /obj/alien/egg/hugger(current_turf, xeno_owner.hivenumber)
+	new /obj/alien/egg/facehugger(current_turf, xeno_owner.hivenumber)
 	playsound(current_turf, 'sound/effects/splat.ogg', 15, 1)
 
 	succeed_activate()
@@ -1257,7 +1257,15 @@
 
 	victim.do_jitter_animation(2)
 	victim.adjust_clone_loss(20)
-	xeno_owner.biomass = min(xeno_owner.biomass + 15, 100)
+
+	// Caster gets 5 biomass immediately
+	xeno_owner.biomass = min(xeno_owner.biomass + 5, 50)
+
+	// All living xenos (including caster) get +0.05 passive biomass gain
+	for(var/mob/living/carbon/xenomorph/xeno AS in GLOB.alive_xeno_list_hive[xeno_owner.hivenumber])
+		if(xeno.xeno_caste.caste_flags & CASTE_IS_A_MINION)
+			continue
+		xeno.biomass_gain_bonus += 0.05
 
 	ADD_TRAIT(victim, TRAIT_PSY_DRAINED, TRAIT_PSY_DRAINED)
 	if(HAS_TRAIT(victim, TRAIT_UNDEFIBBABLE))
@@ -1375,7 +1383,10 @@
 	victim.dead_ticks = 0
 	ADD_TRAIT(victim, TRAIT_STASIS, TRAIT_STASIS)
 	xeno_owner.eject_victim(TRUE, starting_turf)
-	xeno_owner.biomass = min(xeno_owner.biomass + 15, 100)
+	for(var/mob/living/carbon/xenomorph/xeno AS in GLOB.alive_xeno_list_hive[xeno_owner.hivenumber])
+		if(xeno.xeno_caste.caste_flags & CASTE_IS_A_MINION)
+			continue
+		xeno.biomass_gain_bonus += 0.05
 	if(owner.client)
 		var/datum/personal_statistics/personal_statistics = GLOB.personal_statistics_list[owner.ckey]
 		personal_statistics.cocooned++
